@@ -10,6 +10,7 @@ import org.asamk.signal.manager.api.Contact;
 import org.asamk.signal.manager.api.Device;
 import org.asamk.signal.manager.api.DeviceLinkUrl;
 import org.asamk.signal.manager.api.Group;
+import org.asamk.signal.manager.api.GroupJoinInfo;
 import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.api.GroupInviteLinkUrl;
 import org.asamk.signal.manager.api.GroupNotFoundException;
@@ -29,6 +30,7 @@ import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.NotAGroupMemberException;
 import org.asamk.signal.manager.api.NotPrimaryDeviceException;
 import org.asamk.signal.manager.api.Pair;
+import org.asamk.signal.manager.api.PendingAdminApprovalException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.RateLimitException;
 import org.asamk.signal.manager.api.ReceiveConfig;
@@ -376,6 +378,13 @@ public class DbusManagerImpl implements Manager {
             throw new IOException("Failed to join group: " + e.getMessage() + " (" + e.getClass().getSimpleName() + ")",
                     e);
         }
+    }
+
+    @Override
+    public GroupJoinInfo getGroupJoinInfo(
+            GroupInviteLinkUrl inviteLinkUrl
+    ) throws IOException, InactiveGroupLinkException {
+        throw new IOException("Feature not available in dbus");
     }
 
     @Override

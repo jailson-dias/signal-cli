@@ -9,6 +9,7 @@ import org.asamk.signal.manager.api.Device;
 import org.asamk.signal.manager.api.DeviceLimitExceededException;
 import org.asamk.signal.manager.api.DeviceLinkUrl;
 import org.asamk.signal.manager.api.Group;
+import org.asamk.signal.manager.api.GroupJoinInfo;
 import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.api.GroupInviteLinkUrl;
 import org.asamk.signal.manager.api.GroupNotFoundException;
@@ -172,6 +173,10 @@ public interface Manager extends Closeable {
     Pair<GroupId, SendGroupMessageResults> joinGroup(
             GroupInviteLinkUrl inviteLinkUrl
     ) throws IOException, InactiveGroupLinkException, PendingAdminApprovalException;
+
+    public GroupJoinInfo getGroupJoinInfo(
+            GroupInviteLinkUrl inviteLinkUrl
+    ) throws IOException, InactiveGroupLinkException;
 
     SendMessageResults sendTypingMessage(
             TypingAction action, Set<RecipientIdentifier> recipients

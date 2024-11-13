@@ -26,6 +26,7 @@ import org.asamk.signal.manager.api.Device;
 import org.asamk.signal.manager.api.DeviceLimitExceededException;
 import org.asamk.signal.manager.api.DeviceLinkUrl;
 import org.asamk.signal.manager.api.Group;
+import org.asamk.signal.manager.api.GroupJoinInfo;
 import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.api.GroupInviteLinkUrl;
 import org.asamk.signal.manager.api.GroupNotFoundException;
@@ -593,6 +594,13 @@ public class ManagerImpl implements Manager {
             GroupInviteLinkUrl inviteLinkUrl
     ) throws IOException, InactiveGroupLinkException, PendingAdminApprovalException {
         return context.getGroupHelper().joinGroup(inviteLinkUrl);
+    }
+
+    @Override
+    public GroupJoinInfo getGroupJoinInfo(
+            GroupInviteLinkUrl inviteLinkUrl
+    ) throws IOException, InactiveGroupLinkException {
+        return context.getGroupHelper().getGroupJoinInfo(inviteLinkUrl);
     }
 
     private SendMessageResults sendMessage(
