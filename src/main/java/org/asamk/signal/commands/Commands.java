@@ -21,6 +21,7 @@ public class Commands {
         addCommand(new GetStickerCommand());
         addCommand(new GetUserStatusCommand());
         addCommand(new AddStickerPackCommand());
+        addCommand(new GetJoinGroupInfoCommand());
         addCommand(new JoinGroupCommand());
         addCommand(new JsonRpcDispatcherCommand());
         addCommand(new LinkCommand());
