@@ -40,6 +40,27 @@
   "name":"[Ljava.sql.Statement;"
 },
 {
+  "name":"[Lorg.asamk.signal.json.JsonAttachment;"
+},
+{
+  "name":"[Lorg.asamk.signal.json.JsonMention;"
+},
+{
+  "name":"[Lorg.asamk.signal.json.JsonPreview;"
+},
+{
+  "name":"[Lorg.asamk.signal.json.JsonQuotedAttachment;"
+},
+{
+  "name":"[Lorg.asamk.signal.json.JsonSyncReadMessage;"
+},
+{
+  "name":"[Lorg.asamk.signal.json.JsonTextStyle;"
+},
+{
+  "name":"[Lorg.asamk.signal.manager.storage.accounts.AccountsStorage$Account;"
+},
+{
   "name":"[Lorg.whispersystems.signalservice.api.groupsv2.TemporalCredential;"
 },
 {
@@ -161,7 +182,7 @@
   "name":"com.zaxxer.hikari.HikariConfig",
   "allDeclaredFields":true,
   "queryAllPublicMethods":true,
-  "methods":[{"name":"getAllowPoolSuspension","parameterTypes":[] }, {"name":"getAutoCommit","parameterTypes":[] }, {"name":"getCatalog","parameterTypes":[] }, {"name":"getConnectionInitSql","parameterTypes":[] }, {"name":"getConnectionTestQuery","parameterTypes":[] }, {"name":"getConnectionTimeout","parameterTypes":[] }, {"name":"getDataSource","parameterTypes":[] }, {"name":"getDataSourceClassName","parameterTypes":[] }, {"name":"getDataSourceJNDI","parameterTypes":[] }, {"name":"getDataSourceProperties","parameterTypes":[] }, {"name":"getDriverClassName","parameterTypes":[] }, {"name":"getExceptionOverrideClassName","parameterTypes":[] }, {"name":"getHealthCheckProperties","parameterTypes":[] }, {"name":"getHealthCheckRegistry","parameterTypes":[] }, {"name":"getIdleTimeout","parameterTypes":[] }, {"name":"getInitializationFailTimeout","parameterTypes":[] }, {"name":"getIsolateInternalQueries","parameterTypes":[] }, {"name":"getJdbcUrl","parameterTypes":[] }, {"name":"getKeepaliveTime","parameterTypes":[] }, {"name":"getLeakDetectionThreshold","parameterTypes":[] }, {"name":"getMaxLifetime","parameterTypes":[] }, {"name":"getMaximumPoolSize","parameterTypes":[] }, {"name":"getMetricRegistry","parameterTypes":[] }, {"name":"getMetricsTrackerFactory","parameterTypes":[] }, {"name":"getMinimumIdle","parameterTypes":[] }, {"name":"getPassword","parameterTypes":[] }, {"name":"getPoolName","parameterTypes":[] }, {"name":"getReadOnly","parameterTypes":[] }, {"name":"getRegisterMbeans","parameterTypes":[] }, {"name":"getScheduledExecutor","parameterTypes":[] }, {"name":"getSchema","parameterTypes":[] }, {"name":"getThreadFactory","parameterTypes":[] }, {"name":"getTransactionIsolation","parameterTypes":[] }, {"name":"getUsername","parameterTypes":[] }, {"name":"getValidationTimeout","parameterTypes":[] }, {"name":"isAllowPoolSuspension","parameterTypes":[] }, {"name":"isAutoCommit","parameterTypes":[] }, {"name":"isIsolateInternalQueries","parameterTypes":[] }, {"name":"isReadOnly","parameterTypes":[] }, {"name":"isRegisterMbeans","parameterTypes":[] }, {"name":"setAllowPoolSuspension","parameterTypes":["boolean"] }, {"name":"setAutoCommit","parameterTypes":["boolean"] }, {"name":"setCatalog","parameterTypes":["java.lang.String"] }, {"name":"setClass","parameterTypes":["java.lang.Class"] }, {"name":"setConnectionInitSql","parameterTypes":["java.lang.String"] }, {"name":"setConnectionTestQuery","parameterTypes":["java.lang.String"] }, {"name":"setConnectionTimeout","parameterTypes":["long"] }, {"name":"setDataSource","parameterTypes":["javax.sql.DataSource"] }, {"name":"setDataSourceClassName","parameterTypes":["java.lang.String"] }, {"name":"setDataSourceJNDI","parameterTypes":["java.lang.String"] }, {"name":"setDataSourceProperties","parameterTypes":["java.util.Properties"] }, {"name":"setDriverClassName","parameterTypes":["java.lang.String"] }, {"name":"setExceptionOverrideClassName","parameterTypes":["java.lang.String"] }, {"name":"setHealthCheckProperties","parameterTypes":["java.util.Properties"] }, {"name":"setHealthCheckRegistry","parameterTypes":["java.lang.Object"] }, {"name":"setIdleTimeout","parameterTypes":["long"] }, {"name":"setInitializationFailTimeout","parameterTypes":["long"] }, {"name":"setIsolateInternalQueries","parameterTypes":["boolean"] }, {"name":"setJdbcUrl","parameterTypes":["java.lang.String"] }, {"name":"setKeepaliveTime","parameterTypes":["long"] }, {"name":"setLeakDetectionThreshold","parameterTypes":["long"] }, {"name":"setMaxLifetime","parameterTypes":["long"] }, {"name":"setMaximumPoolSize","parameterTypes":["int"] }, {"name":"setMetricRegistry","parameterTypes":["java.lang.Object"] }, {"name":"setMetricsTrackerFactory","parameterTypes":["com.zaxxer.hikari.metrics.MetricsTrackerFactory"] }, {"name":"setMinimumIdle","parameterTypes":["int"] }, {"name":"setPassword","parameterTypes":["java.lang.String"] }, {"name":"setPoolName","parameterTypes":["java.lang.String"] }, {"name":"setReadOnly","parameterTypes":["boolean"] }, {"name":"setRegisterMbeans","parameterTypes":["boolean"] }, {"name":"setScheduledExecutor","parameterTypes":["java.util.concurrent.ScheduledExecutorService"] }, {"name":"setSchema","parameterTypes":["java.lang.String"] }, {"name":"setThreadFactory","parameterTypes":["java.util.concurrent.ThreadFactory"] }, {"name":"setTransactionIsolation","parameterTypes":["java.lang.String"] }, {"name":"setUsername","parameterTypes":["java.lang.String"] }, {"name":"setValidationTimeout","parameterTypes":["long"] }]
+  "methods":[{"name":"getAllowPoolSuspension","parameterTypes":[] }, {"name":"getAutoCommit","parameterTypes":[] }, {"name":"getCatalog","parameterTypes":[] }, {"name":"getConnectionInitSql","parameterTypes":[] }, {"name":"getConnectionTestQuery","parameterTypes":[] }, {"name":"getConnectionTimeout","parameterTypes":[] }, {"name":"getCredentials","parameterTypes":[] }, {"name":"getDataSource","parameterTypes":[] }, {"name":"getDataSourceClassName","parameterTypes":[] }, {"name":"getDataSourceJNDI","parameterTypes":[] }, {"name":"getDataSourceProperties","parameterTypes":[] }, {"name":"getDriverClassName","parameterTypes":[] }, {"name":"getExceptionOverride","parameterTypes":[] }, {"name":"getExceptionOverrideClassName","parameterTypes":[] }, {"name":"getHealthCheckProperties","parameterTypes":[] }, {"name":"getHealthCheckRegistry","parameterTypes":[] }, {"name":"getIdleTimeout","parameterTypes":[] }, {"name":"getInitializationFailTimeout","parameterTypes":[] }, {"name":"getIsolateInternalQueries","parameterTypes":[] }, {"name":"getJdbcUrl","parameterTypes":[] }, {"name":"getKeepaliveTime","parameterTypes":[] }, {"name":"getLeakDetectionThreshold","parameterTypes":[] }, {"name":"getMaxLifetime","parameterTypes":[] }, {"name":"getMaximumPoolSize","parameterTypes":[] }, {"name":"getMetricRegistry","parameterTypes":[] }, {"name":"getMetricsTrackerFactory","parameterTypes":[] }, {"name":"getMinimumIdle","parameterTypes":[] }, {"name":"getPassword","parameterTypes":[] }, {"name":"getPoolName","parameterTypes":[] }, {"name":"getReadOnly","parameterTypes":[] }, {"name":"getRegisterMbeans","parameterTypes":[] }, {"name":"getScheduledExecutor","parameterTypes":[] }, {"name":"getSchema","parameterTypes":[] }, {"name":"getThreadFactory","parameterTypes":[] }, {"name":"getTransactionIsolation","parameterTypes":[] }, {"name":"getUsername","parameterTypes":[] }, {"name":"getValidationTimeout","parameterTypes":[] }, {"name":"isAllowPoolSuspension","parameterTypes":[] }, {"name":"isAutoCommit","parameterTypes":[] }, {"name":"isIsolateInternalQueries","parameterTypes":[] }, {"name":"isReadOnly","parameterTypes":[] }, {"name":"isRegisterMbeans","parameterTypes":[] }, {"name":"setAllowPoolSuspension","parameterTypes":["boolean"] }, {"name":"setAutoCommit","parameterTypes":["boolean"] }, {"name":"setCatalog","parameterTypes":["java.lang.String"] }, {"name":"setClass","parameterTypes":["java.lang.Class"] }, {"name":"setConnectionInitSql","parameterTypes":["java.lang.String"] }, {"name":"setConnectionTestQuery","parameterTypes":["java.lang.String"] }, {"name":"setConnectionTimeout","parameterTypes":["long"] }, {"name":"setCredentials","parameterTypes":["com.zaxxer.hikari.util.Credentials"] }, {"name":"setDataSource","parameterTypes":["javax.sql.DataSource"] }, {"name":"setDataSourceClassName","parameterTypes":["java.lang.String"] }, {"name":"setDataSourceJNDI","parameterTypes":["java.lang.String"] }, {"name":"setDataSourceProperties","parameterTypes":["java.util.Properties"] }, {"name":"setDriverClassName","parameterTypes":["java.lang.String"] }, {"name":"setExceptionOverride","parameterTypes":["com.zaxxer.hikari.SQLExceptionOverride"] }, {"name":"setExceptionOverrideClassName","parameterTypes":["java.lang.String"] }, {"name":"setHealthCheckProperties","parameterTypes":["java.util.Properties"] }, {"name":"setHealthCheckRegistry","parameterTypes":["java.lang.Object"] }, {"name":"setIdleTimeout","parameterTypes":["long"] }, {"name":"setInitializationFailTimeout","parameterTypes":["long"] }, {"name":"setIsolateInternalQueries","parameterTypes":["boolean"] }, {"name":"setJdbcUrl","parameterTypes":["java.lang.String"] }, {"name":"setKeepaliveTime","parameterTypes":["long"] }, {"name":"setLeakDetectionThreshold","parameterTypes":["long"] }, {"name":"setMaxLifetime","parameterTypes":["long"] }, {"name":"setMaximumPoolSize","parameterTypes":["int"] }, {"name":"setMetricRegistry","parameterTypes":["java.lang.Object"] }, {"name":"setMetricsTrackerFactory","parameterTypes":["com.zaxxer.hikari.metrics.MetricsTrackerFactory"] }, {"name":"setMinimumIdle","parameterTypes":["int"] }, {"name":"setPassword","parameterTypes":["java.lang.String"] }, {"name":"setPoolName","parameterTypes":["java.lang.String"] }, {"name":"setReadOnly","parameterTypes":["boolean"] }, {"name":"setRegisterMbeans","parameterTypes":["boolean"] }, {"name":"setScheduledExecutor","parameterTypes":["java.util.concurrent.ScheduledExecutorService"] }, {"name":"setSchema","parameterTypes":["java.lang.String"] }, {"name":"setThreadFactory","parameterTypes":["java.util.concurrent.ThreadFactory"] }, {"name":"setTransactionIsolation","parameterTypes":["java.lang.String"] }, {"name":"setUsername","parameterTypes":["java.lang.String"] }, {"name":"setValidationTimeout","parameterTypes":["long"] }]
 },
 {
   "name":"com.zaxxer.hikari.pool.PoolBase",
@@ -372,6 +393,11 @@
   "allDeclaredMethods":true
 },
 {
+  "name":"java.util.AbstractMap",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
+},
+{
   "name":"java.util.ArrayList",
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true
@@ -384,6 +410,39 @@
   "name":"java.util.HashSet",
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true
+},
+{
+  "name":"java.util.ImmutableCollections$AbstractImmutableCollection",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"java.util.ImmutableCollections$AbstractImmutableList",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"java.util.ImmutableCollections$AbstractImmutableMap",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"java.util.ImmutableCollections$ListN",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"java.util.ImmutableCollections$Map1",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"java.util.ImmutableCollections$MapN",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
 },
 {
   "name":"java.util.LinkedHashMap",
@@ -399,7 +458,8 @@
   "methods":[{"name":"getUnicodeLocaleType","parameterTypes":["java.lang.String"] }]
 },
 {
-  "name":"java.util.Map"
+  "name":"java.util.Map",
+  "queryAllDeclaredMethods":true
 },
 {
   "name":"java.util.Optional",
@@ -887,18 +947,21 @@
   "name":"org.asamk.signal.json.JsonContact",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
   "methods":[{"name":"color","parameterTypes":[] }, {"name":"familyName","parameterTypes":[] }, {"name":"givenName","parameterTypes":[] }, {"name":"internal","parameterTypes":[] }, {"name":"isBlocked","parameterTypes":[] }, {"name":"isHidden","parameterTypes":[] }, {"name":"messageExpirationTime","parameterTypes":[] }, {"name":"name","parameterTypes":[] }, {"name":"nickFamilyName","parameterTypes":[] }, {"name":"nickGivenName","parameterTypes":[] }, {"name":"nickName","parameterTypes":[] }, {"name":"note","parameterTypes":[] }, {"name":"number","parameterTypes":[] }, {"name":"profile","parameterTypes":[] }, {"name":"profileSharing","parameterTypes":[] }, {"name":"unregistered","parameterTypes":[] }, {"name":"username","parameterTypes":[] }, {"name":"uuid","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.json.JsonContact$JsonInternal",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
   "methods":[{"name":"capabilities","parameterTypes":[] }, {"name":"discoverableByPhonenumber","parameterTypes":[] }, {"name":"sharesPhoneNumber","parameterTypes":[] }, {"name":"unidentifiedAccessMode","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.json.JsonContact$JsonProfile",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
   "methods":[{"name":"about","parameterTypes":[] }, {"name":"aboutEmoji","parameterTypes":[] }, {"name":"familyName","parameterTypes":[] }, {"name":"givenName","parameterTypes":[] }, {"name":"hasAvatar","parameterTypes":[] }, {"name":"lastUpdateTimestamp","parameterTypes":[] }, {"name":"mobileCoinAddress","parameterTypes":[] }]
 },
 {
@@ -976,7 +1039,7 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
-  "methods":[{"name":"callMessage","parameterTypes":[] }, {"name":"dataMessage","parameterTypes":[] }, {"name":"editMessage","parameterTypes":[] }, {"name":"receiptMessage","parameterTypes":[] }, {"name":"source","parameterTypes":[] }, {"name":"sourceDevice","parameterTypes":[] }, {"name":"sourceName","parameterTypes":[] }, {"name":"sourceNumber","parameterTypes":[] }, {"name":"sourceUuid","parameterTypes":[] }, {"name":"storyMessage","parameterTypes":[] }, {"name":"syncMessage","parameterTypes":[] }, {"name":"timestamp","parameterTypes":[] }, {"name":"typingMessage","parameterTypes":[] }]
+  "methods":[{"name":"callMessage","parameterTypes":[] }, {"name":"dataMessage","parameterTypes":[] }, {"name":"editMessage","parameterTypes":[] }, {"name":"receiptMessage","parameterTypes":[] }, {"name":"serverDeliveredTimestamp","parameterTypes":[] }, {"name":"serverReceivedTimestamp","parameterTypes":[] }, {"name":"source","parameterTypes":[] }, {"name":"sourceDevice","parameterTypes":[] }, {"name":"sourceName","parameterTypes":[] }, {"name":"sourceNumber","parameterTypes":[] }, {"name":"sourceUuid","parameterTypes":[] }, {"name":"storyMessage","parameterTypes":[] }, {"name":"syncMessage","parameterTypes":[] }, {"name":"timestamp","parameterTypes":[] }, {"name":"typingMessage","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.json.JsonPayment",
@@ -2161,6 +2224,9 @@
   "fields":[{"name":"duration_"}]
 },
 {
+  "name":"org.slf4j.Logger"
+},
+{
   "name":"org.sqlite.JDBC"
 },
 {
@@ -2557,6 +2623,7 @@
   "allDeclaredFields":true,
   "allDeclaredClasses":true,
   "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
   "methods":[{"name":"accountAttributes","parameterTypes":[] }, {"name":"aciPqLastResortPreKey","parameterTypes":[] }, {"name":"aciSignedPreKey","parameterTypes":[] }, {"name":"pniPqLastResortPreKey","parameterTypes":[] }, {"name":"pniSignedPreKey","parameterTypes":[] }, {"name":"verificationCode","parameterTypes":[] }]
 },
 {

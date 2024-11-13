@@ -1,6 +1,23 @@
 # Changelog
 
-## [Unreleased]
+## [0.13.9] - 2024-10-28
+
+### Fixed
+
+- Fix verify command
+
+## [0.13.8] - 2024-10-26
+
+Requires libsignal-client version 0.58.2
+
+### Fixed
+
+- Fix sending large text messages
+- Fix setting message expiration timer with recent Signal apps
+
+### Improved
+
+- Add group name and timestamps on json message (Thanks @jailson-dias)
 
 ## [0.13.7] - 2024-09-28
 
@@ -706,7 +723,8 @@ Requires libsignal-client version 0.52.2
 ### Added
 
 - New parameters for `updateGroup` command for group v2 features:
-  `--description`, `--remove-member`, `--admin`, `--remove-admin`, `--reset-link`, `--link`, `--set-permission-add-member`, `--set-permission-edit-details`, `--expiration`
+  `--description`, `--remove-member`, `--admin`, `--remove-admin`, `--reset-link`, `--link`,
+  `--set-permission-add-member`, `--set-permission-edit-details`, `--expiration`
 - New `--admin` parameter for `quitGroup` to set an admin before leaving the group
 - New `--delete` parameter for `quitGroup`, to delete the local group data
 - New 'sendTyping' command to send typing indicators

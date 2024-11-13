@@ -10,14 +10,14 @@ import org.asamk.signal.manager.api.VerificationMethodNotAvailableException;
 import org.asamk.signal.manager.helper.PinHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.signalservice.api.push.exceptions.NoSuchSessionException;
 import org.whispersystems.signalservice.api.push.exceptions.NonSuccessfulResponseCodeException;
 import org.whispersystems.signalservice.api.push.exceptions.PushChallengeRequiredException;
 import org.whispersystems.signalservice.api.push.exceptions.TokenNotAcceptedException;
-import org.whispersystems.signalservice.internal.ServiceResponse;
+import org.whispersystems.signalservice.api.registration.RegistrationApi;
 import org.whispersystems.signalservice.internal.push.LockedException;
+import org.whispersystems.signalservice.internal.push.PushServiceSocket.VerificationCodeTransport;
 import org.whispersystems.signalservice.internal.push.RegistrationSessionMetadataResponse;
 import org.whispersystems.signalservice.internal.push.VerifyAccountResponse;
 
@@ -30,7 +30,7 @@ public class NumberVerificationUtils {
     private static final Logger logger = LoggerFactory.getLogger(NumberVerificationUtils.class);
 
     public static String handleVerificationSession(
-            SignalServiceAccountManager accountManager,
+            RegistrationApi registrationApi,
             String sessionId,
             Consumer<String> sessionIdSaver,
             boolean voiceVerification,
@@ -38,11 +38,11 @@ public class NumberVerificationUtils {
     ) throws CaptchaRequiredException, IOException, RateLimitException, VerificationMethodNotAvailableException {
         RegistrationSessionMetadataResponse sessionResponse;
         try {
-            sessionResponse = getValidSession(accountManager, sessionId);
+            sessionResponse = getValidSession(registrationApi, sessionId);
         } catch (PushChallengeRequiredException |
                  org.whispersystems.signalservice.api.push.exceptions.CaptchaRequiredException e) {
             if (captcha != null) {
-                sessionResponse = submitCaptcha(accountManager, sessionId, captcha);
+                sessionResponse = submitCaptcha(registrationApi, sessionId, captcha);
             } else {
                 throw new CaptchaRequiredException("Captcha Required");
             }
@@ -77,7 +77,7 @@ public class NumberVerificationUtils {
 
         if (sessionResponse.getBody().getRequestedInformation().contains("captcha")) {
             if (captcha != null) {
-                sessionResponse = submitCaptcha(accountManager, sessionId, captcha);
+                sessionResponse = submitCaptcha(registrationApi, sessionId, captcha);
             }
             if (!sessionResponse.getBody().getAllowedToRequestCode()) {
                 throw new CaptchaRequiredException("Captcha Required");
@@ -88,15 +88,13 @@ public class NumberVerificationUtils {
     }
 
     public static void requestVerificationCode(
-            SignalServiceAccountManager accountManager, String sessionId, boolean voiceVerification
+            RegistrationApi registrationApi, String sessionId, boolean voiceVerification
     ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException {
-        final ServiceResponse<RegistrationSessionMetadataResponse> response;
         final var locale = Utils.getDefaultLocale(Locale.US);
-        if (voiceVerification) {
-            response = accountManager.requestVoiceVerificationCode(sessionId, locale, false);
-        } else {
-            response = accountManager.requestSmsVerificationCode(sessionId, locale, false);
-        }
+        final var response = registrationApi.requestSmsVerificationCode(sessionId,
+                locale,
+                false,
+                voiceVerification ? VerificationCodeTransport.VOICE : VerificationCodeTransport.SMS);
         try {
             Utils.handleResponseException(response);
         } catch (org.whispersystems.signalservice.api.push.exceptions.CaptchaRequiredException e) {
@@ -140,37 +138,37 @@ public class NumberVerificationUtils {
     }
 
     private static RegistrationSessionMetadataResponse validateSession(
-            final SignalServiceAccountManager accountManager, final String sessionId
+            final RegistrationApi registrationApi, final String sessionId
     ) throws IOException {
         if (sessionId == null || sessionId.isEmpty()) {
             throw new NoSuchSessionException();
         }
-        return Utils.handleResponseException(accountManager.getRegistrationSession(sessionId));
+        return Utils.handleResponseException(registrationApi.getRegistrationSessionStatus(sessionId));
     }
 
     private static RegistrationSessionMetadataResponse requestValidSession(
-            final SignalServiceAccountManager accountManager
+            final RegistrationApi registrationApi
     ) throws IOException {
-        return Utils.handleResponseException(accountManager.createRegistrationSession(null, "", ""));
+        return Utils.handleResponseException(registrationApi.createRegistrationSession(null, "", ""));
     }
 
     private static RegistrationSessionMetadataResponse getValidSession(
-            final SignalServiceAccountManager accountManager, final String sessionId
+            final RegistrationApi registrationApi, final String sessionId
     ) throws IOException {
         try {
-            return validateSession(accountManager, sessionId);
+            return validateSession(registrationApi, sessionId);
         } catch (NoSuchSessionException e) {
             logger.debug("No registration session, creating new one.");
-            return requestValidSession(accountManager);
+            return requestValidSession(registrationApi);
         }
     }
 
     private static RegistrationSessionMetadataResponse submitCaptcha(
-            SignalServiceAccountManager accountManager, String sessionId, String captcha
+            RegistrationApi registrationApi, String sessionId, String captcha
     ) throws IOException, CaptchaRequiredException {
         captcha = captcha == null ? null : captcha.replace("signalcaptcha://", "");
         try {
-            return Utils.handleResponseException(accountManager.submitCaptchaToken(sessionId, captcha));
+            return Utils.handleResponseException(registrationApi.submitCaptchaToken(sessionId, captcha));
         } catch (PushChallengeRequiredException |
                  org.whispersystems.signalservice.api.push.exceptions.CaptchaRequiredException |
                  TokenNotAcceptedException _e) {
