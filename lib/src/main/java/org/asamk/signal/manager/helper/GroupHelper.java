@@ -5,6 +5,7 @@ import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.api.GroupIdV1;
 import org.asamk.signal.manager.api.GroupIdV2;
 import org.asamk.signal.manager.api.GroupInviteLinkUrl;
+import org.asamk.signal.manager.api.GroupJoinInfo;
 import org.asamk.signal.manager.api.GroupLinkState;
 import org.asamk.signal.manager.api.GroupNotFoundException;
 import org.asamk.signal.manager.api.GroupPermission;
@@ -360,6 +361,29 @@ public class GroupHelper {
 
         context.getJobExecutor().enqueueJob(new SyncStorageJob());
         return new Pair<>(group.getGroupId(), result);
+    }
+
+    public GroupJoinInfo getGroupJoinInfo(
+            GroupInviteLinkUrl inviteLinkUrl
+    ) throws IOException, InactiveGroupLinkException {
+        final DecryptedGroupJoinInfo groupJoinInfo;
+        try {
+            groupJoinInfo = context.getGroupV2Helper()
+                    .getDecryptedGroupJoinInfo(inviteLinkUrl.getGroupMasterKey(), inviteLinkUrl.getPassword());
+        } catch (GroupLinkNotActiveException e) {
+            throw new InactiveGroupLinkException("Group link inactive (reason: " + e.getReason() + ")", e);
+        }
+
+        return GroupJoinInfo.from(
+            groupJoinInfo.title,
+            inviteLinkUrl.getUrl(),
+            groupJoinInfo.avatar,
+            groupJoinInfo.memberCount,
+            groupJoinInfo.revision,
+            groupJoinInfo.pendingAdminApproval,
+            groupJoinInfo.description,
+            groupJoinInfo.isAnnouncementGroup
+        );
     }
 
     public SendGroupMessageResults quitGroup(
