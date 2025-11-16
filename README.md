@@ -145,3 +145,8 @@ This project uses libsignal-service-java from Open Whisper Systems:
 https://github.com/WhisperSystems/libsignal-service-java
 
 Licensed under the GPLv3: http://www.gnu.org/licenses/gpl-3.0.html
+
+
+
+
+./gradlew run --args="-a +5583981074594 receive"
