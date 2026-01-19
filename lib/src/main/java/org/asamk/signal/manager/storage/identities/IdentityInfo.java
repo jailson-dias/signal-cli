@@ -1,8 +1,8 @@
 package org.asamk.signal.manager.storage.identities;
 
 import org.asamk.signal.manager.api.TrustLevel;
+import org.signal.core.models.ServiceId;
 import org.signal.libsignal.protocol.IdentityKey;
-import org.whispersystems.signalservice.api.push.ServiceId;
 
 public class IdentityInfo {
 
@@ -11,9 +11,7 @@ public class IdentityInfo {
     private final TrustLevel trustLevel;
     private final long addedTimestamp;
 
-    IdentityInfo(
-            final String address, IdentityKey identityKey, TrustLevel trustLevel, long addedTimestamp
-    ) {
+    IdentityInfo(final String address, IdentityKey identityKey, TrustLevel trustLevel, long addedTimestamp) {
         this.address = address;
         this.identityKey = identityKey;
         this.trustLevel = trustLevel;

@@ -12,14 +12,14 @@ import org.asamk.signal.manager.api.GroupIdV1;
 import org.asamk.signal.manager.api.GroupIdV2;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
+import org.signal.core.models.ServiceId;
+import org.signal.core.util.Hex;
 import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.groups.GroupMasterKey;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.DistributionId;
-import org.whispersystems.signalservice.api.push.ServiceId;
-import org.whispersystems.signalservice.internal.util.Hex;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -151,7 +151,8 @@ public class LegacyGroupStore {
 
                 @Override
                 public List<Member> deserialize(
-                        JsonParser jsonParser, DeserializationContext deserializationContext
+                        JsonParser jsonParser,
+                        DeserializationContext deserializationContext
                 ) throws IOException {
                     var addresses = new ArrayList<Member>();
                     JsonNode node = jsonParser.getCodec().readTree(jsonParser);
@@ -184,7 +185,8 @@ public class LegacyGroupStore {
 
         @Override
         public List<Object> deserialize(
-                JsonParser jsonParser, DeserializationContext deserializationContext
+                JsonParser jsonParser,
+                DeserializationContext deserializationContext
         ) throws IOException {
             var groups = new ArrayList<>();
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);

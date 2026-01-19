@@ -3,10 +3,13 @@ plugins {
     application
     eclipse
     `check-lib-versions`
-    id("org.graalvm.buildtools.native") version "0.10.3"
+    id("org.graalvm.buildtools.native") version "0.11.3"
 }
 
-version = "0.13.9"
+allprojects {
+    group = "org.asamk"
+    version = "0.13.23-SNAPSHOT"
+}
 
 java {
     sourceCompatibility = JavaVersion.VERSION_21
@@ -21,6 +24,7 @@ java {
 
 application {
     mainClass.set("org.asamk.signal.Main")
+    applicationDefaultJvmArgs = listOf("--enable-native-access=ALL-UNNAMED")
 }
 
 graalvmNative {
@@ -29,6 +33,7 @@ graalvmNative {
             buildArgs.add("--install-exit-handlers")
             buildArgs.add("-Dfile.encoding=UTF-8")
             buildArgs.add("-J-Dfile.encoding=UTF-8")
+            buildArgs.add("-march=compatibility")
             resources.autodetect()
             configurationFileDirectories.from(file("graalvm-config-dir"))
             if (System.getenv("GRAALVM_HOME") == null) {
@@ -43,7 +48,41 @@ graalvmNative {
     }
 }
 
+val artifactType = Attribute.of("artifactType", String::class.java)
+val minified = Attribute.of("minified", Boolean::class.javaObjectType)
 dependencies {
+    attributesSchema {
+        attribute(minified)
+    }
+    artifactTypes.getByName("jar") {
+        attributes.attribute(minified, false)
+    }
+}
+
+configurations.runtimeClasspath.configure {
+    attributes {
+        attribute(minified, true)
+    }
+}
+val excludePatterns = mapOf(
+    "libsignal-client" to setOf(
+        "libsignal_jni_testing_amd64.so",
+        "signal_jni_testing_amd64.dll",
+        "libsignal_jni_testing_amd64.dylib",
+        "libsignal_jni_testing_aarch64.dylib",
+    )
+)
+
+dependencies {
+    registerTransform(JarFileExcluder::class) {
+        from.attribute(minified, false).attribute(artifactType, "jar")
+        to.attribute(minified, true).attribute(artifactType, "jar")
+
+        parameters {
+            excludeFilesByArtifact = excludePatterns
+        }
+    }
+
     implementation(libs.bouncycastle)
     implementation(libs.jackson.databind)
     implementation(libs.argparse4j)
@@ -51,7 +90,7 @@ dependencies {
     implementation(libs.slf4j.api)
     implementation(libs.slf4j.jul)
     implementation(libs.logback)
-    implementation(project(":lib"))
+    implementation(project(":libsignal-cli"))
 }
 
 configurations {
@@ -75,12 +114,13 @@ tasks.withType<Jar> {
         attributes(
             "Implementation-Title" to project.name,
             "Implementation-Version" to project.version,
-            "Main-Class" to application.mainClass.get()
+            "Main-Class" to application.mainClass.get(),
+            "Enable-Native-Access" to "ALL-UNNAMED",
         )
     }
 }
 
-task("fatJar", type = Jar::class) {
+tasks.register("fatJar", type = Jar::class) {
     archiveBaseName.set("${project.name}-fat")
     exclude(
         "META-INF/*.SF",
@@ -89,9 +129,11 @@ task("fatJar", type = Jar::class) {
         "META-INF/NOTICE*",
         "META-INF/LICENSE*",
         "META-INF/INDEX.LIST",
-        "**/module-info.class"
+        "**/module-info.class",
     )
     duplicatesStrategy = DuplicatesStrategy.WARN
-    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    doFirst {
+        from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    }
     with(tasks.jar.get())
 }

@@ -15,6 +15,7 @@ pub struct Cli {
     pub json_rpc_tcp: Option<Option<SocketAddr>>,
 
     /// UNIX socket address and port of signal-cli daemon
+    #[cfg(unix)]
     #[arg(long, conflicts_with = "json_rpc_tcp")]
     pub json_rpc_socket: Option<Option<OsString>>,
 
@@ -84,6 +85,8 @@ pub enum CliCommands {
     },
     GetUserStatus {
         recipient: Vec<String>,
+        #[arg(long)]
+        username: Vec<String>,
     },
     JoinGroup {
         #[arg(long)]
@@ -175,6 +178,9 @@ pub enum CliCommands {
 
         #[arg(short = 'a', long)]
         attachment: Vec<String>,
+
+        #[arg(long)]
+        view_once: bool,
 
         #[arg(long)]
         mention: Vec<String>,
@@ -413,7 +419,7 @@ pub enum CliCommands {
         #[arg(long = "about-emoji")]
         about_emoji: Option<String>,
 
-        #[arg(long = "mobile-coin-address")]
+        #[arg(long = "mobile-coin-address", visible_alias = "mobilecoin-address")]
         mobile_coin_address: Option<String>,
 
         #[arg(long)]

@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-import org.whispersystems.signalservice.api.push.ServiceId;
+import org.signal.core.models.ServiceId;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,7 +27,8 @@ public class LegacyRecipientStore {
 
         @Override
         public List<RecipientAddress> deserialize(
-                JsonParser jsonParser, DeserializationContext deserializationContext
+                JsonParser jsonParser,
+                DeserializationContext deserializationContext
         ) throws IOException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 

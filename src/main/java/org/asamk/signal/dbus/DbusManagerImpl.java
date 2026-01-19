@@ -203,14 +203,18 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public void startChangeNumber(
-            final String newNumber, final boolean voiceVerification, final String captcha
+            final String newNumber,
+            final boolean voiceVerification,
+            final String captcha
     ) throws RateLimitException, IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException {
         throw new UnsupportedOperationException();
     }
 
     @Override
     public void finishChangeNumber(
-            final String newNumber, final String verificationCode, final String pin
+            final String newNumber,
+            final String verificationCode,
+            final String pin
     ) throws IncorrectPinException, PinLockedException, IOException {
         throw new UnsupportedOperationException();
     }
@@ -271,8 +275,19 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
+    public List<Group> getGroups(final Collection<GroupId> groupIds) {
+        final var groups = signal.listGroups();
+        return groups.stream()
+                .map(Signal.StructGroup::getObjectPath)
+                .map(this::getGroup)
+                .filter(g -> groupIds.contains(g.groupId()))
+                .toList();
+    }
+
+    @Override
     public SendGroupMessageResults quitGroup(
-            final GroupId groupId, final Set<RecipientIdentifier.Single> groupAdmins
+            final GroupId groupId,
+            final Set<RecipientIdentifier.Single> groupAdmins
     ) throws GroupNotFoundException, IOException, NotAGroupMemberException, LastGroupAdminException {
         if (!groupAdmins.isEmpty()) {
             throw new UnsupportedOperationException();
@@ -298,7 +313,9 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public Pair<GroupId, SendGroupMessageResults> createGroup(
-            final String name, final Set<RecipientIdentifier.Single> members, final String avatarFile
+            final String name,
+            final Set<RecipientIdentifier.Single> members,
+            final String avatarFile
     ) throws IOException, AttachmentInvalidException {
         final var newGroupId = signal.createGroup(emptyIfNull(name),
                 members.stream().map(RecipientIdentifier.Single::getIdentifier).toList(),
@@ -308,7 +325,8 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public SendGroupMessageResults updateGroup(
-            final GroupId groupId, final UpdateGroup updateGroup
+            final GroupId groupId,
+            final UpdateGroup updateGroup
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException, GroupSendingNotAllowedException {
         final var group = getRemoteObject(signal.getGroup(groupId.serialize()), Signal.Group.class);
         if (updateGroup.getName() != null) {
@@ -389,7 +407,8 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public SendMessageResults sendTypingMessage(
-            final TypingAction action, final Set<RecipientIdentifier> recipients
+            final TypingAction action,
+            final Set<RecipientIdentifier> recipients
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         return handleMessage(recipients, numbers -> {
             numbers.forEach(n -> signal.sendTyping(n, action == TypingAction.STOP));
@@ -404,24 +423,22 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
-    public SendMessageResults sendReadReceipt(
-            final RecipientIdentifier.Single sender, final List<Long> messageIds
-    ) {
+    public SendMessageResults sendReadReceipt(final RecipientIdentifier.Single sender, final List<Long> messageIds) {
         signal.sendReadReceipt(sender.getIdentifier(), messageIds);
         return new SendMessageResults(0, Map.of());
     }
 
     @Override
-    public SendMessageResults sendViewedReceipt(
-            final RecipientIdentifier.Single sender, final List<Long> messageIds
-    ) {
+    public SendMessageResults sendViewedReceipt(final RecipientIdentifier.Single sender, final List<Long> messageIds) {
         signal.sendViewedReceipt(sender.getIdentifier(), messageIds);
         return new SendMessageResults(0, Map.of());
     }
 
     @Override
     public SendMessageResults sendMessage(
-            final Message message, final Set<RecipientIdentifier> recipients, final boolean notifySelf
+            final Message message,
+            final Set<RecipientIdentifier> recipients,
+            final boolean notifySelf
     ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         return handleMessage(recipients,
                 numbers -> signal.sendMessage(message.messageText(), message.attachments(), numbers),
@@ -431,14 +448,17 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public SendMessageResults sendEditMessage(
-            final Message message, final Set<RecipientIdentifier> recipients, final long editTargetTimestamp
+            final Message message,
+            final Set<RecipientIdentifier> recipients,
+            final long editTargetTimestamp
     ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException, InvalidStickerException {
         throw new UnsupportedOperationException();
     }
 
     @Override
     public SendMessageResults sendRemoteDeleteMessage(
-            final long targetSentTimestamp, final Set<RecipientIdentifier> recipients
+            final long targetSentTimestamp,
+            final Set<RecipientIdentifier> recipients
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         return handleMessage(recipients,
                 numbers -> signal.sendRemoteDeleteMessage(targetSentTimestamp, numbers),
@@ -453,6 +473,7 @@ public class DbusManagerImpl implements Manager {
             final RecipientIdentifier.Single targetAuthor,
             final long targetSentTimestamp,
             final Set<RecipientIdentifier> recipients,
+            final boolean notifySelf,
             final boolean isStory
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         return handleMessage(recipients,
@@ -475,7 +496,9 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public SendMessageResults sendPaymentNotificationMessage(
-            final byte[] receipt, final String note, final RecipientIdentifier.Single recipient
+            final byte[] receipt,
+            final String note,
+            final RecipientIdentifier.Single recipient
     ) throws IOException {
         final var timestamp = signal.sendPaymentNotification(receipt, note, recipient.getIdentifier());
         return new SendMessageResults(timestamp, Map.of());
@@ -495,6 +518,38 @@ public class DbusManagerImpl implements Manager {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public SendMessageResults sendPollCreateMessage(
+            final String question,
+            final boolean allowMultiple,
+            final List<String> options,
+            final Set<RecipientIdentifier> recipients,
+            final boolean notifySelf
+    ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public SendMessageResults sendPollVoteMessage(
+            final RecipientIdentifier.Single targetAuthor,
+            final long targetSentTimestamp,
+            final List<Integer> optionIndexes,
+            final int voteCount,
+            final Set<RecipientIdentifier> recipients,
+            final boolean notifySelf
+    ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public SendMessageResults sendPollTerminateMessage(
+            final long targetSentTimestamp,
+            final Set<RecipientIdentifier> recipients,
+            final boolean notifySelf
+    ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException {
+        throw new UnsupportedOperationException();
+    }
+
     public void hideRecipient(final RecipientIdentifier.Single recipient) {
         throw new UnsupportedOperationException();
     }
@@ -511,14 +566,20 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public void setContactName(
-            final RecipientIdentifier.Single recipient, final String givenName, final String familyName
-    ) throws NotPrimaryDeviceException {
+            final RecipientIdentifier.Single recipient,
+            final String givenName,
+            final String familyName,
+            final String nickGivenName,
+            final String nickFamilyName,
+            final String note
+    ) {
         signal.setContactName(recipient.getIdentifier(), givenName);
     }
 
     @Override
     public void setContactsBlocked(
-            final Collection<RecipientIdentifier.Single> recipients, final boolean blocked
+            final Collection<RecipientIdentifier.Single> recipients,
+            final boolean blocked
     ) throws NotPrimaryDeviceException, IOException {
         for (final var recipient : recipients) {
             signal.setContactBlocked(recipient.getIdentifier(), blocked);
@@ -527,7 +588,8 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public void setGroupsBlocked(
-            final Collection<GroupId> groupIds, final boolean blocked
+            final Collection<GroupId> groupIds,
+            final boolean blocked
     ) throws GroupNotFoundException, IOException {
         for (final var groupId : groupIds) {
             setGroupProperty(groupId, "IsBlocked", blocked);
@@ -541,7 +603,8 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public void setExpirationTimer(
-            final RecipientIdentifier.Single recipient, final int messageExpirationTimer
+            final RecipientIdentifier.Single recipient,
+            final int messageExpirationTimer
     ) throws IOException {
         signal.setExpirationTimer(recipient.getIdentifier(), messageExpirationTimer);
     }
@@ -606,7 +669,9 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public void receiveMessages(
-            Optional<Duration> timeout, Optional<Integer> maxMessages, ReceiveMessageHandler handler
+            Optional<Duration> timeout,
+            Optional<Integer> maxMessages,
+            ReceiveMessageHandler handler
     ) throws IOException, AlreadyReceivingException {
         if (receiveThread != null) {
             throw new AlreadyReceivingException("Already receiving message.");
@@ -793,7 +858,8 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public boolean trustIdentityVerified(
-            final RecipientIdentifier.Single recipient, final IdentityVerificationCode verificationCode
+            final RecipientIdentifier.Single recipient,
+            final IdentityVerificationCode verificationCode
     ) {
         throw new UnsupportedOperationException();
     }
@@ -907,6 +973,9 @@ public class DbusManagerImpl implements Manager {
                                 Optional.empty(),
                                 Optional.empty(),
                                 List.of(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
                                 getMentions(extras),
                                 List.of(),
                                 List.of())),
@@ -950,6 +1019,9 @@ public class DbusManagerImpl implements Manager {
                                         Optional.empty(),
                                         Optional.empty(),
                                         List.of(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty(),
                                         getMentions(extras),
                                         List.of(),
                                         List.of()))),
@@ -1025,6 +1097,9 @@ public class DbusManagerImpl implements Manager {
                                         Optional.empty(),
                                         Optional.empty(),
                                         List.of(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty(),
                                         getMentions(extras),
                                         List.of(),
                                         List.of())),
@@ -1133,9 +1208,7 @@ public class DbusManagerImpl implements Manager {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> T getValue(
-            final Map<String, Variant<?>> stringVariantMap, final String field
-    ) {
+    private <T> T getValue(final Map<String, Variant<?>> stringVariantMap, final String field) {
         return (T) stringVariantMap.get(field).getValue();
     }
 }

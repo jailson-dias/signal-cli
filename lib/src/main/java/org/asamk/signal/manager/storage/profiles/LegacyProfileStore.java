@@ -9,9 +9,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
+import org.signal.core.models.ServiceId;
 import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
-import org.whispersystems.signalservice.api.push.ServiceId;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,7 +34,8 @@ public class LegacyProfileStore {
 
         @Override
         public List<LegacySignalProfileEntry> deserialize(
-                JsonParser jsonParser, DeserializationContext deserializationContext
+                JsonParser jsonParser,
+                DeserializationContext deserializationContext
         ) throws IOException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 

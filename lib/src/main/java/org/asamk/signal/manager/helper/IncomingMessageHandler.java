@@ -31,8 +31,11 @@ import org.asamk.signal.manager.internal.SignalDependencies;
 import org.asamk.signal.manager.jobs.RetrieveStickerPackJob;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
+import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.stickers.StickerPack;
+import org.signal.core.models.ServiceId;
+import org.signal.core.models.ServiceId.ACI;
 import org.signal.libsignal.metadata.ProtocolInvalidKeyException;
 import org.signal.libsignal.metadata.ProtocolInvalidKeyIdException;
 import org.signal.libsignal.metadata.ProtocolInvalidMessageException;
@@ -61,8 +64,6 @@ import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage
 import org.whispersystems.signalservice.api.messages.SignalServiceStoryMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.StickerPackOperationMessage;
-import org.whispersystems.signalservice.api.push.ServiceId;
-import org.whispersystems.signalservice.api.push.ServiceId.ACI;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.internal.push.Envelope;
@@ -156,6 +157,9 @@ public final class IncomingMessageHandler {
             } catch (ProtocolInvalidKeyIdException | ProtocolInvalidKeyException | ProtocolNoSessionException |
                      ProtocolInvalidMessageException e) {
                 logger.debug("Failed to decrypt incoming message", e);
+                if (e instanceof ProtocolInvalidKeyIdException) {
+                    actions.add(RefreshPreKeysAction.create());
+                }
                 final var sender = account.getRecipientResolver().resolveRecipient(e.getSender());
                 if (context.getContactHelper().isContactBlocked(sender)) {
                     logger.debug("Received invalid message from blocked contact, ignoring.");
@@ -164,12 +168,11 @@ public final class IncomingMessageHandler {
                     if (serviceId != null) {
                         final var isSelf = sender.equals(account.getSelfRecipientId())
                                 && e.getSenderDevice() == account.getDeviceId();
+                        logger.debug("Received invalid message, queuing renew session action.");
+                        actions.add(new RenewSessionAction(sender, serviceId, destination));
                         if (!isSelf) {
                             logger.debug("Received invalid message, requesting message resend.");
-                            actions.add(new SendRetryMessageRequestAction(sender, serviceId, e, envelope, destination));
-                        } else {
-                            logger.debug("Received invalid message, queuing renew session action.");
-                            actions.add(new RenewSessionAction(sender, serviceId, destination));
+                            actions.add(new SendRetryMessageRequestAction(sender, e, envelope));
                         }
                     } else {
                         logger.debug("Received invalid message from invalid sender: {}", e.getSender());
@@ -190,7 +193,9 @@ public final class IncomingMessageHandler {
     }
 
     private SignalServiceContent validate(
-            Envelope envelope, SignalServiceCipherResult cipherResult, long serverDeliveredTimestamp
+            Envelope envelope,
+            SignalServiceCipherResult cipherResult,
+            long serverDeliveredTimestamp
     ) throws ProtocolInvalidKeyException, ProtocolInvalidMessageException, UnsupportedDataMessageException, InvalidMessageStructureException {
         final var content = cipherResult.getContent();
         final var envelopeMetadata = cipherResult.getMetadata();
@@ -280,7 +285,9 @@ public final class IncomingMessageHandler {
     }
 
     public List<HandleAction> handleMessage(
-            SignalServiceEnvelope envelope, SignalServiceContent content, ReceiveConfig receiveConfig
+            SignalServiceEnvelope envelope,
+            SignalServiceContent content,
+            ReceiveConfig receiveConfig
     ) {
         var actions = new ArrayList<HandleAction>();
         final var senderDeviceAddress = getSender(envelope, content);
@@ -381,7 +388,8 @@ public final class IncomingMessageHandler {
     }
 
     private boolean handlePniSignatureMessage(
-            final SignalServicePniSignatureMessage message, final SignalServiceAddress senderAddress
+            final SignalServicePniSignatureMessage message,
+            final SignalServiceAddress senderAddress
     ) {
         final var aci = senderAddress.getServiceId();
         final var aciIdentity = account.getIdentityKeyStore().getIdentityInfo(aci);
@@ -520,12 +528,12 @@ public final class IncomingMessageHandler {
         }
         if (syncMessage.getBlockedList().isPresent()) {
             final var blockedListMessage = syncMessage.getBlockedList().get();
-            for (var address : blockedListMessage.getAddresses()) {
-                context.getContactHelper()
-                        .setContactBlocked(account.getRecipientResolver().resolveRecipient(address), true);
+            for (var individual : blockedListMessage.individuals) {
+                final var address = new RecipientAddress(individual.getAci(), individual.getE164());
+                final var recipientId = account.getRecipientResolver().resolveRecipient(address);
+                context.getContactHelper().setContactBlocked(recipientId, true);
             }
-            for (var groupId : blockedListMessage.getGroupIds()
-                    .stream()
+            for (var groupId : blockedListMessage.groupIds.stream()
                     .map(GroupId::unknownVersion)
                     .collect(Collectors.toSet())) {
                 try {
@@ -580,14 +588,22 @@ public final class IncomingMessageHandler {
         }
         if (syncMessage.getKeys().isPresent()) {
             final var keysMessage = syncMessage.getKeys().get();
-            if (keysMessage.getStorageService().isPresent()) {
-                final var storageKey = keysMessage.getStorageService().get();
+            if (keysMessage.getAccountEntropyPool() != null) {
+                final var aep = keysMessage.getAccountEntropyPool();
+                account.setAccountEntropyPool(aep);
+                actions.add(SyncStorageDataAction.create());
+            } else if (keysMessage.getMaster() != null) {
+                final var masterKey = keysMessage.getMaster();
+                account.setMasterKey(masterKey);
+                actions.add(SyncStorageDataAction.create());
+            } else if (keysMessage.getStorageService() != null) {
+                final var storageKey = keysMessage.getStorageService();
                 account.setStorageKey(storageKey);
                 actions.add(SyncStorageDataAction.create());
             }
-            if (keysMessage.getMaster().isPresent()) {
-                final var masterKey = keysMessage.getMaster().get();
-                account.setMasterKey(masterKey);
+            if (keysMessage.getMediaRootBackupKey() != null) {
+                final var mrb = keysMessage.getMediaRootBackupKey();
+                account.setMediaRootBackupKey(mrb);
                 actions.add(SyncStorageDataAction.create());
             }
         }
@@ -865,7 +881,9 @@ public final class IncomingMessageHandler {
     }
 
     private List<HandleAction> handleSignalServiceStoryMessage(
-            SignalServiceStoryMessage message, RecipientId source, boolean ignoreAttachments
+            SignalServiceStoryMessage message,
+            RecipientId source,
+            boolean ignoreAttachments
     ) {
         var actions = new ArrayList<HandleAction>();
         if (message.getGroupContext().isPresent()) {
@@ -946,7 +964,7 @@ public final class IncomingMessageHandler {
 
     private DeviceAddress getDestination(SignalServiceEnvelope envelope) {
         final var destination = envelope.getDestinationServiceId();
-        if (destination == null) {
+        if (destination == null || destination.isUnknown()) {
             return new DeviceAddress(account.getSelfRecipientId(), account.getAci(), account.getDeviceId());
         }
         return new DeviceAddress(account.getRecipientResolver().resolveRecipient(destination),

@@ -2,6 +2,7 @@ package org.asamk.signal.manager;
 
 import org.asamk.signal.manager.api.AccountCheckException;
 import org.asamk.signal.manager.api.NotRegisteredException;
+import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.ServiceEnvironment;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
@@ -64,18 +65,28 @@ public class SignalAccountFiles {
     }
 
     public MultiAccountManager initMultiAccountManager() throws IOException {
-        final var managers = accountsStore.getAllAccounts().parallelStream().map(a -> {
+        final var managerPairs = accountsStore.getAllAccounts().parallelStream().map(a -> {
             try {
-                return initManager(a.number(), a.path());
-            } catch (NotRegisteredException | IOException | AccountCheckException e) {
+                return new Pair<Manager, Throwable>(initManager(a.number(), a.path()), null);
+            } catch (NotRegisteredException e) {
                 logger.warn("Ignoring {}: {} ({})", a.number(), e.getMessage(), e.getClass().getSimpleName());
                 return null;
-            } catch (Throwable e) {
+            } catch (AccountCheckException | IOException e) {
                 logger.error("Failed to load {}: {} ({})", a.number(), e.getMessage(), e.getClass().getSimpleName());
-                throw e;
+                return new Pair<Manager, Throwable>(null, e);
             }
         }).filter(Objects::nonNull).toList();
 
+        for (final var pair : managerPairs) {
+            if (pair.second() instanceof IOException e) {
+                throw e;
+            }
+        }
+
+        final var managers = managerPairs.stream()
+                .filter(p -> p != null && p.first() != null)
+                .map(Pair::first)
+                .toList();
         return new MultiAccountManagerImpl(managers, this);
     }
 
@@ -85,7 +96,8 @@ public class SignalAccountFiles {
     }
 
     private Manager initManager(
-            String number, String accountPath
+            String number,
+            String accountPath
     ) throws IOException, NotRegisteredException, AccountCheckException {
         if (accountPath == null) {
             throw new NotRegisteredException();
@@ -121,7 +133,7 @@ public class SignalAccountFiles {
             manager.checkAccountState();
         } catch (DeprecatedVersionException e) {
             manager.close();
-            throw new AccountCheckException("signal-cli version is too old for the Signal-Server, please update.");
+            throw new IOException("signal-cli version is too old for the Signal-Server, please update.");
         } catch (IOException e) {
             manager.close();
             throw new AccountCheckException("Error while checking account " + number + ": " + e.getMessage(), e);
@@ -152,7 +164,8 @@ public class SignalAccountFiles {
     }
 
     public RegistrationManager initRegistrationManager(
-            String number, Consumer<Manager> newManagerListener
+            String number,
+            Consumer<Manager> newManagerListener
     ) throws IOException {
         final var accountPath = accountsStore.getPathByNumber(number);
         if (accountPath == null || !SignalAccount.accountFileExists(pathConfig.dataPath(), accountPath)) {

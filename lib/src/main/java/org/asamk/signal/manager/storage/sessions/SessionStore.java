@@ -3,6 +3,7 @@ package org.asamk.signal.manager.storage.sessions;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.storage.Database;
 import org.asamk.signal.manager.storage.Utils;
+import org.signal.core.models.ServiceId;
 import org.signal.libsignal.protocol.NoSessionException;
 import org.signal.libsignal.protocol.SignalProtocolAddress;
 import org.signal.libsignal.protocol.ecc.ECPublicKey;
@@ -10,7 +11,6 @@ import org.signal.libsignal.protocol.state.SessionRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalServiceSessionStore;
-import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 
 import java.sql.Connection;
@@ -342,15 +342,18 @@ public class SessionStore implements SignalServiceSessionStore {
     }
 
     private void storeSession(
-            final Connection connection, final Key key, final SessionRecord session
+            final Connection connection,
+            final Key key,
+            final SessionRecord session
     ) throws SQLException {
         synchronized (cachedSessions) {
             cachedSessions.put(key, session);
         }
 
         final var sql = """
-                        INSERT OR REPLACE INTO %s (account_id_type, address, device_id, record)
+                        INSERT INTO %s (account_id_type, address, device_id, record)
                         VALUES (?, ?, ?, ?)
+                        ON CONFLICT (account_id_type, address, device_id) DO UPDATE SET record=excluded.record
                         """.formatted(TABLE_SESSION);
         try (final var statement = connection.prepareStatement(sql)) {
             statement.setInt(1, accountIdType);

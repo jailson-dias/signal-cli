@@ -3,8 +3,8 @@ package org.asamk.signal.manager.helper;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.DeviceLinkUrl;
 import org.asamk.signal.manager.api.IncorrectPinException;
-import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
+import org.asamk.signal.manager.api.PinLockMissingException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.RateLimitException;
 import org.asamk.signal.manager.api.VerificationMethodNotAvailableException;
@@ -14,6 +14,8 @@ import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.asamk.signal.manager.util.NumberVerificationUtils;
 import org.asamk.signal.manager.util.Utils;
+import org.signal.core.models.ServiceId.ACI;
+import org.signal.core.models.ServiceId.PNI;
 import org.signal.core.util.Base64;
 import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.signal.libsignal.protocol.InvalidKeyException;
@@ -27,11 +29,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.account.ChangePhoneNumberRequest;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
-import org.whispersystems.signalservice.api.push.ServiceId.ACI;
-import org.whispersystems.signalservice.api.push.ServiceId.PNI;
+import org.whispersystems.signalservice.api.link.LinkedDeviceVerificationCodeResponse;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.SignedPreKeyEntity;
+import org.whispersystems.signalservice.api.push.UsernameLinkComponents;
 import org.whispersystems.signalservice.api.push.exceptions.AlreadyVerifiedException;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
 import org.whispersystems.signalservice.api.push.exceptions.DeprecatedVersionException;
@@ -50,12 +52,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import okio.ByteString;
 
 import static org.asamk.signal.manager.config.ServiceConfig.PREKEY_MAXIMUM_ID;
+import static org.asamk.signal.manager.util.Utils.handleResponseException;
 import static org.whispersystems.signalservice.internal.util.Util.isEmpty;
 
 public class AccountHelper {
@@ -79,16 +82,9 @@ public class AccountHelper {
     }
 
     public void checkAccountState() throws IOException {
-        if (account.getLastReceiveTimestamp() == 0) {
-            logger.info("The Signal protocol expects that incoming messages are regularly received.");
-        } else {
-            var diffInMilliseconds = System.currentTimeMillis() - account.getLastReceiveTimestamp();
-            long days = TimeUnit.DAYS.convert(diffInMilliseconds, TimeUnit.MILLISECONDS);
-            if (days > 7) {
-                logger.warn(
-                        "Messages have been last received {} days ago. The Signal protocol expects that incoming messages are regularly received.",
-                        days);
-            }
+        if (account.getAci() == null) {
+            account.setRegistered(false);
+            throw new IOException("Account without ACI");
         }
         try {
             updateAccountAttributes();
@@ -97,13 +93,13 @@ public class AccountHelper {
             } else {
                 context.getPreKeyHelper().refreshPreKeysIfNecessary();
             }
-            if (account.getAci() == null || account.getPni() == null) {
+            if (account.getPni() == null) {
                 checkWhoAmiI();
             }
             if (!account.isPrimaryDevice() && account.getPniIdentityKeyPair() == null) {
-                context.getSyncHelper().requestSyncPniIdentity();
+                throw new IOException("Missing PNI identity key, relinking required");
             }
-            if (account.getPreviousStorageVersion() < 4
+            if (account.getPreviousStorageVersion() < 10
                     && account.isPrimaryDevice()
                     && account.getRegistrationLockPin() != null) {
                 migrateRegistrationPin();
@@ -121,6 +117,17 @@ public class AccountHelper {
         } catch (AuthorizationFailedException e) {
             account.setRegistered(false);
             throw e;
+        }
+        if (account.getLastReceiveTimestamp() == 0) {
+            logger.info("The Signal protocol expects that incoming messages are regularly received.");
+        } else {
+            var diffInMilliseconds = System.currentTimeMillis() - account.getLastReceiveTimestamp();
+            long days = TimeUnit.DAYS.convert(diffInMilliseconds, TimeUnit.MILLISECONDS);
+            if (days > 7) {
+                logger.warn(
+                        "Messages have been last received {} days ago. The Signal protocol expects that incoming messages are regularly received.",
+                        days);
+            }
         }
     }
 
@@ -165,7 +172,9 @@ public class AccountHelper {
     }
 
     public void startChangeNumber(
-            String newNumber, boolean voiceVerification, String captcha
+            String newNumber,
+            boolean voiceVerification,
+            String captcha
     ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, RateLimitException, VerificationMethodNotAvailableException {
         final var accountManager = dependencies.createUnauthenticatedAccountManager(newNumber, account.getPassword());
         final var registrationApi = accountManager.getRegistrationApi();
@@ -178,8 +187,10 @@ public class AccountHelper {
     }
 
     public void finishChangeNumber(
-            String newNumber, String verificationCode, String pin
-    ) throws IncorrectPinException, PinLockedException, IOException {
+            String newNumber,
+            String verificationCode,
+            String pin
+    ) throws IncorrectPinException, PinLockedException, IOException, PinLockMissingException {
         for (var attempts = 0; attempts < 5; attempts++) {
             try {
                 finishChangeNumberInternal(newNumber, verificationCode, pin);
@@ -196,8 +207,10 @@ public class AccountHelper {
     }
 
     private void finishChangeNumberInternal(
-            String newNumber, String verificationCode, String pin
-    ) throws IncorrectPinException, PinLockedException, IOException {
+            String newNumber,
+            String verificationCode,
+            String pin
+    ) throws IncorrectPinException, PinLockedException, IOException, PinLockMissingException {
         final var pniIdentity = KeyUtils.generateIdentityKeyPair();
         final var encryptedDeviceMessages = new ArrayList<OutgoingPushMessage>();
         final var devicePniSignedPreKeys = new HashMap<Integer, SignedPreKeyEntity>();
@@ -276,19 +289,22 @@ public class AccountHelper {
         }
 
         final var sessionId = account.getSessionId(newNumber);
+        if (sessionId == null) {
+            throw new IOException("No change number verification session active");
+        }
         final var result = NumberVerificationUtils.verifyNumber(sessionId,
                 verificationCode,
                 pin,
                 context.getPinHelper(),
                 (sessionId1, verificationCode1, registrationLock) -> {
                     final var registrationApi = dependencies.getRegistrationApi();
+                    final var accountApi = dependencies.getAccountApi();
                     try {
-                        Utils.handleResponseException(registrationApi.verifyAccount(sessionId1, verificationCode1));
+                        handleResponseException(registrationApi.verifyAccount(sessionId1, verificationCode1));
                     } catch (AlreadyVerifiedException e) {
                         // Already verified so can continue changing number
                     }
-                    return Utils.handleResponseException(registrationApi.changeNumber(new ChangePhoneNumberRequest(
-                            sessionId1,
+                    return handleResponseException(accountApi.changeNumber(new ChangePhoneNumberRequest(sessionId1,
                             null,
                             newNumber,
                             registrationLock,
@@ -299,6 +315,7 @@ public class AccountHelper {
                             Utils.mapKeys(pniRegistrationIds, Object::toString))));
                 });
 
+        account.clearSessionId();
         final var updatePni = PNI.parseOrThrow(result.first().getPni());
         if (updatePni.equals(account.getPni())) {
             logger.debug("PNI is unchanged after change number");
@@ -308,9 +325,7 @@ public class AccountHelper {
         handlePniChangeNumberMessage(selfChangeNumber, updatePni);
     }
 
-    public void handlePniChangeNumberMessage(
-            final SyncMessage.PniChangeNumber pniChangeNumber, final PNI updatedPni
-    ) {
+    public void handlePniChangeNumberMessage(final SyncMessage.PniChangeNumber pniChangeNumber, final PNI updatedPni) {
         if (pniChangeNumber.identityKeyPair != null
                 && pniChangeNumber.registrationId != null
                 && pniChangeNumber.signedPreKey != null) {
@@ -374,7 +389,7 @@ public class AccountHelper {
             candidateHashes.add(Base64.encodeUrlSafeWithoutPadding(candidate.getHash()));
         }
 
-        final var response = dependencies.getAccountManager().reserveUsername(candidateHashes);
+        final var response = handleResponseException(dependencies.getAccountApi().reserveUsername(candidateHashes));
         final var hashIndex = candidateHashes.indexOf(response.getUsernameHash());
         if (hashIndex == -1) {
             logger.warn("[reserveUsername] The response hash could not be found in our set of candidateHashes.");
@@ -384,12 +399,46 @@ public class AccountHelper {
         logger.debug("[reserveUsername] Successfully reserved username.");
         final var username = candidates.get(hashIndex);
 
-        final var linkComponents = dependencies.getAccountManager().confirmUsernameAndCreateNewLink(username);
+        final var linkComponents = confirmUsernameAndCreateNewLink(username);
         account.setUsername(username.getUsername());
         account.setUsernameLink(linkComponents);
         account.getRecipientStore().resolveSelfRecipientTrusted(account.getSelfRecipientAddress());
         account.getRecipientStore().rotateSelfStorageId();
         logger.debug("[confirmUsername] Successfully confirmed username.");
+    }
+
+    public UsernameLinkComponents createUsernameLink(Username username) throws IOException {
+        try {
+            Username.UsernameLink link = username.generateLink();
+            return handleResponseException(dependencies.getAccountApi().createUsernameLink(link));
+        } catch (BaseUsernameException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    private UsernameLinkComponents confirmUsernameAndCreateNewLink(Username username) throws IOException {
+        try {
+            Username.UsernameLink link = username.generateLink();
+            UUID serverId = handleResponseException(dependencies.getAccountApi().confirmUsername(username, link));
+
+            return new UsernameLinkComponents(link.getEntropy(), serverId);
+        } catch (BaseUsernameException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    private UsernameLinkComponents reclaimUsernameAndLink(
+            Username username,
+            UsernameLinkComponents linkComponents
+    ) throws IOException {
+        try {
+            Username.UsernameLink link = username.generateLink(linkComponents.getEntropy());
+            UUID serverId = handleResponseException(dependencies.getAccountApi().confirmUsername(username, link));
+
+            return new UsernameLinkComponents(link.getEntropy(), serverId);
+        } catch (BaseUsernameException e) {
+            throw new AssertionError(e);
+        }
     }
 
     public void refreshCurrentUsername() throws IOException, BaseUsernameException {
@@ -434,14 +483,14 @@ public class AccountHelper {
         final var usernameLink = account.getUsernameLink();
 
         if (usernameLink == null) {
-            dependencies.getAccountManager()
-                    .reserveUsername(List.of(Base64.encodeUrlSafeWithoutPadding(username.getHash())));
+            handleResponseException(dependencies.getAccountApi()
+                    .reserveUsername(List.of(Base64.encodeUrlSafeWithoutPadding(username.getHash()))));
             logger.debug("[reserveUsername] Successfully reserved existing username.");
-            final var linkComponents = dependencies.getAccountManager().confirmUsernameAndCreateNewLink(username);
+            final var linkComponents = confirmUsernameAndCreateNewLink(username);
             account.setUsernameLink(linkComponents);
             logger.debug("[confirmUsername] Successfully confirmed existing username.");
         } else {
-            final var linkComponents = dependencies.getAccountManager().reclaimUsernameAndLink(username, usernameLink);
+            final var linkComponents = reclaimUsernameAndLink(username, usernameLink);
             account.setUsernameLink(linkComponents);
             logger.debug("[confirmUsername] Successfully reclaimed existing username and link.");
         }
@@ -451,7 +500,7 @@ public class AccountHelper {
     private void tryToSetUsernameLink(Username username) {
         for (var i = 1; i < 4; i++) {
             try {
-                final var linkComponents = dependencies.getAccountManager().createUsernameLink(username);
+                final var linkComponents = createUsernameLink(username);
                 account.setUsernameLink(linkComponents);
                 break;
             } catch (IOException e) {
@@ -461,9 +510,8 @@ public class AccountHelper {
     }
 
     public void deleteUsername() throws IOException {
-        dependencies.getAccountManager().deleteUsernameLink();
+        handleResponseException(dependencies.getAccountApi().deleteUsername());
         account.setUsernameLink(null);
-        dependencies.getAccountManager().deleteUsername();
         account.setUsername(null);
         logger.debug("[deleteUsername] Successfully deleted the username.");
     }
@@ -475,36 +523,39 @@ public class AccountHelper {
     }
 
     public void updateAccountAttributes() throws IOException {
-        dependencies.getAccountManager().setAccountAttributes(account.getAccountAttributes(null));
+        handleResponseException(dependencies.getAccountApi().setAccountAttributes(account.getAccountAttributes(null)));
     }
 
-    public void addDevice(DeviceLinkUrl deviceLinkInfo) throws IOException, InvalidDeviceLinkException, org.asamk.signal.manager.api.DeviceLimitExceededException {
-        String verificationCode;
+    public void addDevice(DeviceLinkUrl deviceLinkInfo) throws IOException, org.asamk.signal.manager.api.DeviceLimitExceededException {
+        final var linkDeviceApi = dependencies.getLinkDeviceApi();
+        final LinkedDeviceVerificationCodeResponse verificationCode;
         try {
-            verificationCode = dependencies.getAccountManager().getNewDeviceVerificationCode();
+            verificationCode = handleResponseException(linkDeviceApi.getDeviceVerificationCode());
         } catch (DeviceLimitExceededException e) {
             throw new org.asamk.signal.manager.api.DeviceLimitExceededException("Too many linked devices", e);
         }
 
-        try {
-            dependencies.getAccountManager()
-                    .addDevice(deviceLinkInfo.deviceIdentifier(),
-                            deviceLinkInfo.deviceKey(),
-                            account.getAciIdentityKeyPair(),
-                            account.getPniIdentityKeyPair(),
-                            account.getProfileKey(),
-                            account.getOrCreatePinMasterKey(),
-                            verificationCode);
-        } catch (InvalidKeyException e) {
-            throw new InvalidDeviceLinkException("Invalid device link", e);
-        }
+        handleResponseException(dependencies.getLinkDeviceApi()
+                .linkDevice(account.getNumber(),
+                        account.getAci(),
+                        account.getPni(),
+                        deviceLinkInfo.deviceIdentifier(),
+                        deviceLinkInfo.deviceKey(),
+                        account.getAciIdentityKeyPair(),
+                        account.getPniIdentityKeyPair(),
+                        account.getProfileKey(),
+                        account.getOrCreateAccountEntropyPool(),
+                        account.getOrCreatePinMasterKey(),
+                        account.getOrCreateMediaRootBackupKey(),
+                        verificationCode.getVerificationCode(),
+                        null));
         account.setMultiDevice(true);
         context.getJobExecutor().enqueueJob(new SyncStorageJob());
     }
 
     public void removeLinkedDevices(int deviceId) throws IOException {
-        dependencies.getAccountManager().removeDevice(deviceId);
-        var devices = dependencies.getAccountManager().getDevices();
+        handleResponseException(dependencies.getLinkDeviceApi().removeDevice(deviceId));
+        var devices = handleResponseException(dependencies.getLinkDeviceApi().getDevices());
         account.setMultiDevice(devices.size() > 1);
     }
 
@@ -512,14 +563,16 @@ public class AccountHelper {
         var masterKey = account.getOrCreatePinMasterKey();
 
         context.getPinHelper().migrateRegistrationLockPin(account.getRegistrationLockPin(), masterKey);
-        dependencies.getAccountManager().enableRegistrationLock(masterKey);
+        handleResponseException(dependencies.getAccountApi()
+                .enableRegistrationLock(masterKey.deriveRegistrationLock()));
     }
 
     public void setRegistrationPin(String pin) throws IOException {
         var masterKey = account.getOrCreatePinMasterKey();
 
         context.getPinHelper().setRegistrationLockPin(pin, masterKey);
-        dependencies.getAccountManager().enableRegistrationLock(masterKey);
+        handleResponseException(dependencies.getAccountApi()
+                .enableRegistrationLock(masterKey.deriveRegistrationLock()));
 
         account.setRegistrationLockPin(pin);
         updateAccountAttributes();
@@ -528,7 +581,7 @@ public class AccountHelper {
     public void removeRegistrationPin() throws IOException {
         // Remove KBS Pin
         context.getPinHelper().removeRegistrationLockPin();
-        dependencies.getAccountManager().disableRegistrationLock();
+        handleResponseException(dependencies.getAccountApi().disableRegistrationLock());
 
         account.setRegistrationLockPin(null);
     }
@@ -537,7 +590,7 @@ public class AccountHelper {
         // When setting an empty GCM id, the Signal-Server also sets the fetchesMessages property to false.
         // If this is the primary device, other users can't send messages to this number anymore.
         // If this is a linked device, other users can still send messages, but this device doesn't receive them anymore.
-        dependencies.getAccountManager().setGcmId(Optional.empty());
+        handleResponseException(dependencies.getAccountApi().clearFcmToken());
 
         account.setRegistered(false);
         unregisteredListener.call();
@@ -551,7 +604,7 @@ public class AccountHelper {
         }
         account.setRegistrationLockPin(null);
 
-        dependencies.getAccountManager().deleteAccount();
+        handleResponseException(dependencies.getAccountApi().deleteAccount());
 
         account.setRegistered(false);
         unregisteredListener.call();

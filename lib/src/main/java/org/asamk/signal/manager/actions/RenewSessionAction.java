@@ -2,7 +2,7 @@ package org.asamk.signal.manager.actions;
 
 import org.asamk.signal.manager.helper.Context;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
-import org.whispersystems.signalservice.api.push.ServiceId;
+import org.signal.core.models.ServiceId;
 
 public class RenewSessionAction implements HandleAction {
 
@@ -19,9 +19,7 @@ public class RenewSessionAction implements HandleAction {
     @Override
     public void execute(Context context) throws Throwable {
         context.getAccount().getAccountData(accountId).getSessionStore().archiveSessions(serviceId);
-        if (!recipientId.equals(context.getAccount().getSelfRecipientId())) {
-            context.getSendHelper().sendNullMessage(recipientId);
-        }
+        context.getSendHelper().sendNullMessage(recipientId);
     }
 
     @Override

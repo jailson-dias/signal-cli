@@ -70,6 +70,7 @@ pub trait Rpc {
         &self,
         account: Option<String>,
         recipients: Vec<String>,
+        usernames: Vec<String>,
     ) -> Result<Value, ErrorObjectOwned>;
 
     #[method(name = "joinGroup", param_kind = map)]
@@ -182,6 +183,7 @@ pub trait Rpc {
         endSession: bool,
         message: String,
         attachments: Vec<String>,
+        viewOnce: bool,
         mentions: Vec<String>,
         textStyle: Vec<String>,
         quoteTimestamp: Option<u64>,
@@ -190,10 +192,10 @@ pub trait Rpc {
         quoteMention: Vec<String>,
         quoteTextStyle: Vec<String>,
         quoteAttachment: Vec<String>,
-        preview_url: Option<String>,
-        preview_title: Option<String>,
-        preview_description: Option<String>,
-        preview_image: Option<String>,
+        previewUrl: Option<String>,
+        previewTitle: Option<String>,
+        previewDescription: Option<String>,
+        previewImage: Option<String>,
         sticker: Option<String>,
         storyTimestamp: Option<u64>,
         storyAuthor: Option<String>,
@@ -409,6 +411,7 @@ pub async fn connect_tcp(
     Ok(ClientBuilder::default().build_with_tokio(sender, receiver))
 }
 
+#[cfg(unix)]
 pub async fn connect_unix(
     socket_path: impl AsRef<Path>,
 ) -> Result<impl SubscriptionClientT, std::io::Error> {
@@ -417,6 +420,6 @@ pub async fn connect_unix(
     Ok(ClientBuilder::default().build_with_tokio(sender, receiver))
 }
 
-pub async fn connect_http(uri: &str) -> Result<impl SubscriptionClientT, Error> {
+pub async fn connect_http(uri: &str) -> Result<impl SubscriptionClientT + use<>, Error> {
     HttpClientBuilder::default().build(uri)
 }

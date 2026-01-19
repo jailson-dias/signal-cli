@@ -27,7 +27,8 @@ public class UpdateProfileCommand implements JsonRpcLocalCommand {
         subparser.addArgument("--family-name").help("New profile family name (optional)");
         subparser.addArgument("--about").help("New profile about text");
         subparser.addArgument("--about-emoji").help("New profile about emoji");
-        subparser.addArgument("--mobile-coin-address").help("New MobileCoin address (Base64 encoded public address)");
+        subparser.addArgument("--mobile-coin-address", "--mobilecoin-address")
+                .help("New MobileCoin address (Base64 encoded public address)");
 
         final var avatarOptions = subparser.addMutuallyExclusiveGroup();
         avatarOptions.addArgument("--avatar").help("Path to new profile avatar");
@@ -36,7 +37,9 @@ public class UpdateProfileCommand implements JsonRpcLocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final Manager m, final OutputWriter outputWriter
+            final Namespace ns,
+            final Manager m,
+            final OutputWriter outputWriter
     ) throws CommandException {
         var givenName = ns.getString("given-name");
         var familyName = ns.getString("family-name");

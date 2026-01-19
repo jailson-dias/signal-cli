@@ -42,7 +42,7 @@ public class LogConfigurator extends ContextAwareBase implements Configurator {
         }});
         final var rootLogger = lc.getLogger(Logger.ROOT_LOGGER_NAME);
 
-        final var defaultLevel = verboseLevel > 2 ? Level.ALL : verboseLevel > 0 ? Level.INFO : Level.WARN;
+        final var defaultLevel = verboseLevel > 2 ? Level.TRACE : verboseLevel > 0 ? Level.INFO : Level.WARN;
         rootLogger.setLevel(defaultLevel);
 
         final var consoleLayout = verboseLevel == 0 || logFile != null
@@ -51,13 +51,14 @@ public class LogConfigurator extends ContextAwareBase implements Configurator {
         final var consoleAppender = createLoggingConsoleAppender(lc, createLayoutWrappingEncoder(consoleLayout));
         rootLogger.addAppender(consoleAppender);
 
-        lc.getLogger("org.asamk").setLevel(verboseLevel > 1 ? Level.ALL : verboseLevel > 0 ? Level.DEBUG : Level.INFO);
+        lc.getLogger("org.asamk")
+                .setLevel(verboseLevel > 1 ? Level.TRACE : verboseLevel > 0 ? Level.DEBUG : Level.INFO);
         lc.getLogger("org.asamk.Signal")
-                .setLevel(verboseLevel > 2 ? Level.ALL : verboseLevel > 1 ? Level.INFO : Level.WARN);
+                .setLevel(verboseLevel > 2 ? Level.TRACE : verboseLevel > 1 ? Level.INFO : Level.WARN);
         lc.getLogger("com.zaxxer.hikari.pool.PoolBase")
-                .setLevel(verboseLevel > 2 ? Level.ALL : verboseLevel > 1 ? Level.INFO : Level.WARN);
+                .setLevel(verboseLevel > 2 ? Level.TRACE : verboseLevel > 1 ? Level.INFO : Level.WARN);
         lc.getLogger("org.sqlite.core.NativeDB")
-                .setLevel(verboseLevel > 3 ? Level.ALL : verboseLevel > 1 ? Level.INFO : Level.WARN);
+                .setLevel(verboseLevel > 3 ? Level.TRACE : verboseLevel > 1 ? Level.INFO : Level.WARN);
 
         if (logFile != null) {
             consoleAppender.addFilter(new Filter<>() {
@@ -82,7 +83,8 @@ public class LogConfigurator extends ContextAwareBase implements Configurator {
     }
 
     private ConsoleAppender<ILoggingEvent> createLoggingConsoleAppender(
-            final LoggerContext lc, final LayoutWrappingEncoder<ILoggingEvent> layoutEncoder
+            final LoggerContext lc,
+            final LayoutWrappingEncoder<ILoggingEvent> layoutEncoder
     ) {
         return new ConsoleAppender<>() {{
             setContext(lc);
@@ -94,7 +96,8 @@ public class LogConfigurator extends ContextAwareBase implements Configurator {
     }
 
     private FileAppender<ILoggingEvent> createLoggingFileAppender(
-            final LoggerContext lc, final LayoutWrappingEncoder<ILoggingEvent> layoutEncoder
+            final LoggerContext lc,
+            final LayoutWrappingEncoder<ILoggingEvent> layoutEncoder
     ) {
         return new FileAppender<>() {{
             setContext(lc);

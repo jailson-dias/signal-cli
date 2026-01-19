@@ -41,9 +41,7 @@ public class UnknownStorageIdStore {
         }
     }
 
-    public List<StorageId> getUnknownStorageIds(
-            Connection connection, Collection<Integer> types
-    ) throws SQLException {
+    public List<StorageId> getUnknownStorageIds(Connection connection, Collection<Integer> types) throws SQLException {
         final var typesCommaSeparated = types.stream().map(String::valueOf).collect(Collectors.joining(","));
         final var sql = (
                 """
@@ -60,9 +58,10 @@ public class UnknownStorageIdStore {
     }
 
     public void addUnknownStorageIds(Connection connection, Collection<StorageId> storageIds) throws SQLException {
+        deleteUnknownStorageIds(connection, storageIds);
         final var sql = (
                 """
-                INSERT OR REPLACE INTO %s (type, storage_id)
+                INSERT INTO %s (type, storage_id)
                 VALUES (?, ?)
                 """
         ).formatted(TABLE_STORAGE_ID);

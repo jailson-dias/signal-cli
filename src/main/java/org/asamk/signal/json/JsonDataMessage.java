@@ -11,6 +11,7 @@ record JsonDataMessage(
         long timestamp,
         String message,
         Integer expiresInSeconds,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Boolean isExpirationUpdate,
         @JsonInclude(JsonInclude.Include.NON_NULL) Boolean viewOnce,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonReaction reaction,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonQuote quote,
@@ -21,6 +22,9 @@ record JsonDataMessage(
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonSticker sticker,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonRemoteDelete remoteDelete,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonSharedContact> contacts,
+        @JsonInclude(JsonInclude.Include.NON_NULL) JsonPollCreate pollCreate,
+        @JsonInclude(JsonInclude.Include.NON_NULL) JsonPollVote pollVote,
+        @JsonInclude(JsonInclude.Include.NON_NULL) JsonPollTerminate pollTerminate,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonTextStyle> textStyles,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonGroupInfo groupInfo,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonStoryContext storyContext
@@ -35,6 +39,7 @@ record JsonDataMessage(
                 : null;
         final var message = dataMessage.body().orElse(null);
         final var expiresInSeconds = dataMessage.expiresInSeconds();
+        final var isExpirationUpdate = dataMessage.isExpirationUpdate();
         final var viewOnce = dataMessage.isViewOnce();
         final var reaction = dataMessage.reaction().map(JsonReaction::from).orElse(null);
         final var quote = dataMessage.quote().isPresent() ? JsonQuote.from(dataMessage.quote().get()) : null;
@@ -59,6 +64,9 @@ record JsonDataMessage(
                 .stream()
                 .map(JsonSharedContact::from)
                 .toList() : null;
+        final var pollCreate = dataMessage.pollCreate().map(JsonPollCreate::from).orElse(null);
+        final var pollVote = dataMessage.pollVote().map(JsonPollVote::from).orElse(null);
+        final var pollTerminate = dataMessage.pollTerminate().map(JsonPollTerminate::from).orElse(null);
         final var textStyles = !dataMessage.textStyles().isEmpty() ? dataMessage.textStyles()
                 .stream()
                 .map(JsonTextStyle::from)
@@ -67,6 +75,7 @@ record JsonDataMessage(
         return new JsonDataMessage(timestamp,
                 message,
                 expiresInSeconds,
+                isExpirationUpdate,
                 viewOnce,
                 reaction,
                 quote,
@@ -77,6 +86,9 @@ record JsonDataMessage(
                 sticker,
                 remoteDelete,
                 contacts,
+                pollCreate,
+                pollVote,
+                pollTerminate,
                 textStyles,
                 groupInfo,
                 storyContext);

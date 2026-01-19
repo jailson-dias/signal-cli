@@ -10,6 +10,7 @@ import org.asamk.signal.manager.RegistrationManager;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
+import org.asamk.signal.manager.api.PinLockMissingException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.RateLimitException;
 import org.asamk.signal.manager.api.UserAlreadyExistsException;
@@ -49,14 +50,17 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
 
     @Override
     public void register(
-            final String number, final boolean voiceVerification
+            final String number,
+            final boolean voiceVerification
     ) throws Error.Failure, Error.InvalidNumber {
         registerWithCaptcha(number, voiceVerification, null);
     }
 
     @Override
     public void registerWithCaptcha(
-            final String number, final boolean voiceVerification, final String captcha
+            final String number,
+            final boolean voiceVerification,
+            final String captcha
     ) throws Error.Failure, Error.InvalidNumber {
         if (!Manager.isValidNumber(number, null)) {
             throw new SignalControl.Error.InvalidNumber(
@@ -86,7 +90,9 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
 
     @Override
     public void verifyWithPin(
-            final String number, final String verificationCode, final String pin
+            final String number,
+            final String verificationCode,
+            final String pin
     ) throws Error.Failure, Error.InvalidNumber {
         try (final RegistrationManager registrationManager = c.getNewRegistrationManager(number)) {
             registrationManager.verifyAccount(verificationCode, pin);
@@ -100,6 +106,8 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
                             + (e.getTimeRemaining() / 1000 / 60 / 60));
         } catch (IncorrectPinException e) {
             throw new Error.Failure("Verification failed! Invalid pin, tries remaining: " + e.getTriesRemaining());
+        } catch (PinLockMissingException e) {
+            throw new Error.Failure("Account is pin locked, but pin data has been deleted on the server.");
         }
     }
 
@@ -137,7 +145,9 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
         try {
             final var provisioningManager = c.getProvisioningManagerFor(new URI(deviceLinkUri));
             return provisioningManager.finishDeviceLink(newDeviceName);
-        } catch (TimeoutException | IOException | UserAlreadyExistsException | URISyntaxException e) {
+        } catch (UserAlreadyExistsException e) {
+            throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + " " + e.getNumber());
+        } catch (TimeoutException | IOException | URISyntaxException e) {
             throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + " " + e.getMessage());
         }
     }

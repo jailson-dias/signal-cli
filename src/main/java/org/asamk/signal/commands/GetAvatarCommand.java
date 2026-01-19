@@ -37,11 +37,13 @@ public class GetAvatarCommand implements JsonRpcLocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final Manager m, final OutputWriter outputWriter
+            final Namespace ns,
+            final Manager m,
+            final OutputWriter outputWriter
     ) throws CommandException {
         final var contactRecipient = ns.getString("contact");
         final var profileRecipient = ns.getString("profile");
-        final var groupId = ns.getString("groupId");
+        final var groupId = ns.getString("group-id");
 
         final InputStream data;
         try {

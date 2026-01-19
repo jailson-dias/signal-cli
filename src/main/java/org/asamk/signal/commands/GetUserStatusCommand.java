@@ -43,7 +43,9 @@ public class GetUserStatusCommand implements JsonRpcLocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final Manager m, final OutputWriter outputWriter
+            final Namespace ns,
+            final Manager m,
+            final OutputWriter outputWriter
     ) throws CommandException {
         // Get a map of registration statuses
         Map<String, UserStatus> registered;
@@ -62,9 +64,16 @@ public class GetUserStatusCommand implements JsonRpcLocalCommand {
         }
 
         final var usernames = ns.<String>getList("username");
-        final var registeredUsernames = usernames == null
-                ? Map.<String, UsernameStatus>of()
-                : m.getUsernameStatus(new HashSet<>(usernames));
+        final Map<String, UsernameStatus> registeredUsernames;
+        try {
+            registeredUsernames = usernames == null ? Map.of() : m.getUsernameStatus(new HashSet<>(usernames));
+        } catch (IOException e) {
+            throw new IOErrorException("Unable to check if users are registered: "
+                    + e.getMessage()
+                    + " ("
+                    + e.getClass().getSimpleName()
+                    + ")", e);
+        }
 
         // Output
         switch (outputWriter) {

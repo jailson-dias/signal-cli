@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 if [ $# -ne 2 ]; then
   echo "Usage: $0 NUMBER_1 NUMBER_2"
   exit 1
@@ -133,7 +133,7 @@ mkfifo "$FIFO_FILE"
 run_main -a "$NUMBER_1" send "$NUMBER_2" -m hi
 run_main -a "$NUMBER_2" jsonRpc < "$FIFO_FILE" &
 
-exec 3<> "$FIFO_FILE"
+exec 3> "$FIFO_FILE"
   echo '{"jsonrpc":"2.0","id":"id","method":"updateContact","params":{"recipient":"'"$NUMBER_1"'","name":"NUMBER_1","expiration":10}}' >&3
   echo '{"jsonrpc":"2.0","id":5,"method":"block","params":{"recipient":"'"$NUMBER_1"'"}}' >&3
   echo '{"jsonrpc":"2.0","id":null,"method":"unblock","params":{"recipient":"'"$NUMBER_1"'"}}' >&3
@@ -141,6 +141,7 @@ exec 3<> "$FIFO_FILE"
   echo '{"jsonrpc":"2.0","id":"id","method":"listGroups"}' >&3
   echo '{"jsonrpc":"2.0","id":"id","method":"listDevices"}' >&3
   echo '{"jsonrpc":"2.0","id":"id","method":"listIdentities"}' >&3
+  echo '{"jsonrpc":"2.0","id":"id","method":"listStickerPacks"}' >&3
   echo '{"jsonrpc":"2.0","id":"id","method":"sendSyncRequest"}' >&3
   echo '{"jsonrpc":"2.0","id":"id","method":"sendContacts"}' >&3
   echo '{"jsonrpc":"2.0","id":"id","method":"version"}' >&3
@@ -149,6 +150,7 @@ exec 3<> "$FIFO_FILE"
   echo '{"jsonrpc":"2.0","id":7,"method":"sendTyping","params":{"recipient":"'"$NUMBER_1"'"}}' >&3
   echo '{"jsonrpc":"2.0","id":7,"method":"send","params":{"recipient":"'"$NUMBER_1"'","message":"some text"}}' >&3
   echo '{"jsonrpc":"2.0","id":7,"method":"send","params":{"recipients":["'"$NUMBER_1"'","'"$NUMBER_2"'"],"message":"some other text"}}' >&3
+  echo '{"jsonrpc":"2.0","id":7,"method":"sendReaction","params":{"recipients":["'"$NUMBER_2"'"],"targetAuthor":"'"$NUMBER_1"'","emoji":"👍","targetTimestamp":4756473756}}' >&3
   echo '{"jsonrpc":"2.0","id":7,"method":"updateProfile","params":{"givenName":"n1","familyName":"n2","about":"ABA","aboutEmoji":"EMO","avatar":"LICENSE"}}' >&3
   echo '{"jsonrpc":"2.0","id":7,"method":"getUserStatus","params":{"recipient":"'"$NUMBER_1"'"}}' >&3
 
@@ -172,6 +174,17 @@ run_main -a "$NUMBER_2" listContacts
 run_main -a "$NUMBER_1" send "$NUMBER_2" -m hi
 run_main -a "$NUMBER_2" receive
 run_main -a "$NUMBER_2" send "$NUMBER_1" -m hi
+run_main -a "$NUMBER_1" receive
+run_main -a "$NUMBER_2" receive
+run_main -a "$NUMBER_1" updateAccount --discoverable-by-number=true
+run_main -a "$NUMBER_2" removeContact --forget "$NUMBER_1"
+run_main -a "$NUMBER_2" send "$NUMBER_1" -m hi
+run_main -a "$NUMBER_2" send "$NUMBER_1" -m hii
+run_main -a "$NUMBER_1" updateAccount --discoverable-by-number=false
+run_main -a "$NUMBER_1" receive
+run_main -a "$NUMBER_2" receive
+run_main -a "$NUMBER_2" send "$NUMBER_1" -m hi
+run_main -a "$NUMBER_2" send "$NUMBER_1" -m hii
 run_main -a "$NUMBER_1" receive
 run_main -a "$NUMBER_2" receive
 ## Groups
@@ -236,7 +249,9 @@ for OUTPUT in "plain-text" "json"; do
   run_linked -a "$NUMBER_1" --output="$OUTPUT" receive
 done
 
-run_main -a "$NUMBER_1" removeDevice -d 2
+run_main -a "$NUMBER_1" --output="$OUTPUT" receive
+run_main -a "$NUMBER_1" removeDevice -d 2 || true
+run_main -a "$NUMBER_1" removeDevice -d 2 || true
 
 ## Unregister
 if [ "$TEST_REGISTER" -eq 1 ]; then

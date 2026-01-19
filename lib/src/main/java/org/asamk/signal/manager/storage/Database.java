@@ -24,7 +24,8 @@ public abstract class Database implements AutoCloseable {
     }
 
     public static <T extends Database> T initDatabase(
-            File databaseFile, Function<HikariDataSource, T> newDatabase
+            File databaseFile,
+            Function<HikariDataSource, T> newDatabase
     ) throws SQLException {
         HikariDataSource dataSource = null;
 
@@ -94,10 +95,12 @@ public abstract class Database implements AutoCloseable {
         sqliteConfig.setTransactionMode(SQLiteConfig.TransactionMode.IMMEDIATE);
 
         HikariConfig config = new HikariConfig();
-        config.setJdbcUrl("jdbc:sqlite:" + databaseFile);
+        config.setJdbcUrl("jdbc:sqlite:" + databaseFile + "?foreign_keys=ON&journal_mode=wal");
         config.setDataSourceProperties(sqliteConfig.toProperties());
         config.setMinimumIdle(1);
-        config.setConnectionInitSql("PRAGMA foreign_keys=ON");
+        config.setConnectionTimeout(90_000);
+        config.setMaximumPoolSize(50);
+        config.setMaxLifetime(0);
         return new HikariDataSource(config);
     }
 }

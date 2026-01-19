@@ -5,12 +5,13 @@ import org.asamk.signal.manager.api.TrustNewIdentity;
 import org.asamk.signal.manager.storage.Database;
 import org.asamk.signal.manager.storage.Utils;
 import org.asamk.signal.manager.storage.recipients.RecipientStore;
+import org.signal.core.models.ServiceId;
 import org.signal.libsignal.protocol.IdentityKey;
 import org.signal.libsignal.protocol.InvalidKeyException;
 import org.signal.libsignal.protocol.state.IdentityKeyStore.Direction;
+import org.signal.libsignal.protocol.state.IdentityKeyStore.IdentityChange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.push.ServiceId;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -49,7 +50,9 @@ public class IdentityKeyStore {
     }
 
     public IdentityKeyStore(
-            final Database database, final TrustNewIdentity trustNewIdentity, RecipientStore recipientStore
+            final Database database,
+            final TrustNewIdentity trustNewIdentity,
+            RecipientStore recipientStore
     ) {
         this.database = database;
         this.trustNewIdentity = trustNewIdentity;
@@ -60,19 +63,21 @@ public class IdentityKeyStore {
         return identityChanges;
     }
 
-    public boolean saveIdentity(final ServiceId serviceId, final IdentityKey identityKey) {
+    public IdentityChange saveIdentity(final ServiceId serviceId, final IdentityKey identityKey) {
         return saveIdentity(serviceId.toString(), identityKey);
     }
 
-    public boolean saveIdentity(
-            final Connection connection, final ServiceId serviceId, final IdentityKey identityKey
+    public IdentityChange saveIdentity(
+            final Connection connection,
+            final ServiceId serviceId,
+            final IdentityKey identityKey
     ) throws SQLException {
         return saveIdentity(connection, serviceId.toString(), identityKey);
     }
 
-    boolean saveIdentity(final String address, final IdentityKey identityKey) {
+    IdentityChange saveIdentity(final String address, final IdentityKey identityKey) {
         if (isRetryingDecryption) {
-            return false;
+            return IdentityChange.NEW_OR_UNCHANGED;
         }
         try (final var connection = database.getConnection()) {
             return saveIdentity(connection, address, identityKey);
@@ -81,18 +86,24 @@ public class IdentityKeyStore {
         }
     }
 
-    private boolean saveIdentity(
-            final Connection connection, final String address, final IdentityKey identityKey
+    private IdentityChange saveIdentity(
+            final Connection connection,
+            final String address,
+            final IdentityKey identityKey
     ) throws SQLException {
         final var identityInfo = loadIdentity(connection, address);
-        if (identityInfo != null && identityInfo.getIdentityKey().equals(identityKey)) {
+        if (identityInfo == null) {
+            saveNewIdentity(connection, address, identityKey, true);
+            return IdentityChange.NEW_OR_UNCHANGED;
+        }
+        if (identityInfo.getIdentityKey().equals(identityKey)) {
             // Identity already exists, not updating the trust level
             logger.trace("Not storing new identity for recipient {}, identity already stored", address);
-            return false;
+            return IdentityChange.NEW_OR_UNCHANGED;
         }
 
-        saveNewIdentity(connection, address, identityKey, identityInfo == null);
-        return true;
+        saveNewIdentity(connection, address, identityKey, false);
+        return IdentityChange.REPLACED_EXISTING;
     }
 
     public void setRetryingDecryption(final boolean retryingDecryption) {
@@ -230,9 +241,7 @@ public class IdentityKeyStore {
         logger.debug("Complete identities migration took {}ms", (System.nanoTime() - start) / 1000000);
     }
 
-    private IdentityInfo loadIdentity(
-            final Connection connection, final String address
-    ) throws SQLException {
+    private IdentityInfo loadIdentity(final Connection connection, final String address) throws SQLException {
         final var sql = (
                 """
                 SELECT i.address, i.identity_key, i.added_timestamp, i.trust_level
@@ -271,8 +280,9 @@ public class IdentityKeyStore {
                 identityInfo.getDateAddedTimestamp());
         final var sql = (
                 """
-                INSERT OR REPLACE INTO %s (address, identity_key, added_timestamp, trust_level)
+                INSERT INTO %s (address, identity_key, added_timestamp, trust_level)
                 VALUES (?, ?, ?, ?)
+                ON CONFLICT (address) DO UPDATE SET identity_key=excluded.identity_key, added_timestamp=excluded.added_timestamp, trust_level=excluded.trust_level
                 """
         ).formatted(TABLE_IDENTITY);
         try (final var statement = connection.prepareStatement(sql)) {

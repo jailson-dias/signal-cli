@@ -2,9 +2,9 @@ package org.asamk.signal.manager.config;
 
 import org.signal.libsignal.net.Network.Environment;
 import org.signal.libsignal.protocol.InvalidKeyException;
-import org.signal.libsignal.protocol.ecc.Curve;
 import org.signal.libsignal.protocol.ecc.ECPublicKey;
 import org.whispersystems.signalservice.api.push.TrustStore;
+import org.whispersystems.signalservice.internal.configuration.HttpProxy;
 import org.whispersystems.signalservice.internal.configuration.SignalCdnUrl;
 import org.whispersystems.signalservice.internal.configuration.SignalCdsiUrl;
 import org.whispersystems.signalservice.internal.configuration.SignalProxy;
@@ -27,9 +27,10 @@ class LiveConfig {
 
     private static final byte[] UNIDENTIFIED_SENDER_TRUST_ROOT = Base64.getDecoder()
             .decode("BXu6QIKVz5MA8gstzfOgRQGqyLqOwNKHL6INkv3IHWMF");
+    private static final byte[] UNIDENTIFIED_SENDER_TRUST_ROOT2 = Base64.getDecoder()
+            .decode("BUkY0I+9+oPgDCn4+Ac6Iu813yvqkDr/ga8DzLxFxuk6");
     private static final String CDSI_MRENCLAVE = "0f6fd79cdfdaa5b2e6337f534d3baf999318b0c462a7ac1f41297a3e4b424a57";
-    private static final String SVR2_MRENCLAVE = "9314436a9a144992bb3680770ea5fd7934a7ffd29257844a33763a238903d570";
-    private static final String SVR2_LEGACY_MRENCLAVE = "a6622ad4656e1abcd0bc0ff17c229477747d2ded0495c4ebee7ed35c1789fa97";
+    private static final String SVR2_MRENCLAVE = "29cd63c87bea751e3bfd0fbd401279192e2e5c99948b4ee9437eafc4968355fb";
 
     private static final String URL = "https://chat.signal.org";
     private static final String CDN_URL = "https://cdn.signal.org";
@@ -42,6 +43,7 @@ class LiveConfig {
 
     private static final Optional<Dns> dns = Optional.empty();
     private static final Optional<SignalProxy> proxy = Optional.empty();
+    private static final Optional<HttpProxy> systemProxy = Optional.empty();
 
     private static final byte[] zkGroupServerPublicParams = Base64.getDecoder()
             .decode("AMhf5ywVwITZMsff/eCyudZx9JDmkkkbV6PInzG4p8x3VqVJSFiMvnvlEKWuRob/1eaIetR31IYeAbm0NdOuHH8Qi+Rexi1wLlpzIo1gstHWBfZzy1+qHRV5A4TqPp15YzBPm0WSggW6PbSn+F4lf57VCnHF7p8SvzAA2ZZJPYJURt8X7bbg+H3i+PEjH9DXItNEqs2sNcug37xZQDLm7X36nOoGPs54XsEGzPdEV+itQNGUFEjY6X9Uv+Acuks7NpyGvCoKxGwgKgE5XyJ+nNKlyHHOLb6N1NuHyBrZrgtY/JYJHRooo5CEqYKBqdFnmbTVGEkCvJKxLnjwKWf+fEPoWeQFj5ObDjcKMZf2Jm2Ae69x+ikU5gBXsRmoF94GXTLfN0/vLt98KDPnxwAQL9j5V1jGOY8jQl6MLxEs56cwXN0dqCnImzVH3TZT1cJ8SW1BRX6qIVxEzjsSGx3yxF3suAilPMqGRp4ffyopjMD1JXiKR2RwLKzizUe5e8XyGOy9fplzhw3jVzTRyUZTRSZKkMLWcQ/gv0E4aONNqs4P+NameAZYOD12qRkxosQQP5uux6B2nRyZ7sAV54DgFyLiRcq1FvwKw2EPQdk4HDoePrO/RNUbyNddnM/mMgj4FW65xCoT1LmjrIjsv/Ggdlx46ueczhMgtBunx1/w8k8V+l8LVZ8gAT6wkU5J+DPQalQguMg12Jzug3q4TbdHiGCmD9EunCwOmsLuLJkz6EcSYXtrlDEnAM+hicw7iergYLLlMXpfTdGxJCWJmP4zqUFeTTmsmhsjGBt7NiEB/9pFFEB3pSbf4iiUukw63Eo8Aqnf4iwob6X1QviCWuc8t0LUlT9vALgh/f2DPVOOmR0RW6bgRvc7DSF20V/omg+YBw==");
@@ -51,7 +53,7 @@ class LiveConfig {
     private static final byte[] backupServerPublicParams = Base64.getDecoder()
             .decode("AJwNSU55fsFCbgaxGRD11wO1juAs8Yr5GF8FPlGzzvdJJIKH5/4CC7ZJSOe3yL2vturVaRU2Cx0n751Vt8wkj1bozK3CBV1UokxV09GWf+hdVImLGjXGYLLhnI1J2TWEe7iWHyb553EEnRb5oxr9n3lUbNAJuRmFM7hrr0Al0F0wrDD4S8lo2mGaXe0MJCOM166F8oYRQqpFeEHfiLnxA1O8ZLh7vMdv4g9jI5phpRBTsJ5IjiJrWeP0zdIGHEssUeprDZ9OUJ14m0v61eYJMKsf59Bn+mAT2a7YfB+Don9O");
 
-    private static Environment LIBSIGNAL_NET_ENV = Environment.PRODUCTION;
+    private static final Environment LIBSIGNAL_NET_ENV = Environment.PRODUCTION;
 
     static SignalServiceConfiguration createDefaultServiceConfiguration(
             final List<Interceptor> interceptors
@@ -69,14 +71,17 @@ class LiveConfig {
                 interceptors,
                 dns,
                 proxy,
+                systemProxy,
                 zkGroupServerPublicParams,
                 genericServerPublicParams,
-                backupServerPublicParams);
+                backupServerPublicParams,
+                false);
     }
 
-    static ECPublicKey getUnidentifiedSenderTrustRoot() {
+    static List<ECPublicKey> getUnidentifiedSenderTrustRoots() {
         try {
-            return Curve.decodePoint(UNIDENTIFIED_SENDER_TRUST_ROOT, 0);
+            return List.of(new ECPublicKey(UNIDENTIFIED_SENDER_TRUST_ROOT),
+                    new ECPublicKey(UNIDENTIFIED_SENDER_TRUST_ROOT2));
         } catch (InvalidKeyException e) {
             throw new AssertionError(e);
         }
@@ -86,9 +91,9 @@ class LiveConfig {
         return new ServiceEnvironmentConfig(LIVE,
                 LIBSIGNAL_NET_ENV,
                 createDefaultServiceConfiguration(interceptors),
-                getUnidentifiedSenderTrustRoot(),
+                getUnidentifiedSenderTrustRoots(),
                 CDSI_MRENCLAVE,
-                List.of(SVR2_MRENCLAVE, SVR2_LEGACY_MRENCLAVE));
+                List.of(SVR2_MRENCLAVE));
     }
 
     private LiveConfig() {

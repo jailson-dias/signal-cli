@@ -7,7 +7,6 @@ import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.api.NotPrimaryDeviceException;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.util.CommandUtil;
@@ -26,14 +25,19 @@ public class UpdateContactCommand implements JsonRpcLocalCommand {
         subparser.help("Update the details of a given contact");
         subparser.addArgument("recipient").help("Contact number");
         subparser.addArgument("-n", "--name").help("New contact name");
-        subparser.addArgument("--given-name").help("New contact given name");
-        subparser.addArgument("--family-name").help("New contact family name");
+        subparser.addArgument("--given-name").help("New system given name");
+        subparser.addArgument("--family-name").help("New system family name");
+        subparser.addArgument("--nick-given-name").help("New nick given name");
+        subparser.addArgument("--nick-family-name").help("New nick family name");
+        subparser.addArgument("--note").help("New note");
         subparser.addArgument("-e", "--expiration").type(int.class).help("Set expiration time of messages (seconds)");
     }
 
     @Override
     public void handleCommand(
-            final Namespace ns, final Manager m, final OutputWriter outputWriter
+            final Namespace ns,
+            final Manager m,
+            final OutputWriter outputWriter
     ) throws CommandException {
         var recipientString = ns.getString("recipient");
         var recipient = CommandUtil.getSingleRecipientIdentifier(recipientString, m.getSelfNumber());
@@ -52,13 +56,12 @@ public class UpdateContactCommand implements JsonRpcLocalCommand {
                     familyName = "";
                 }
             }
-            if (givenName != null || familyName != null) {
-                m.setContactName(recipient, givenName, familyName);
-            }
+            var nickGivenName = ns.getString("nick-given-name");
+            var nickFamilyName = ns.getString("nick-family-name");
+            var note = ns.getString("note");
+            m.setContactName(recipient, givenName, familyName, nickGivenName, nickFamilyName, note);
         } catch (IOException e) {
             throw new IOErrorException("Update contact error: " + e.getMessage(), e);
-        } catch (NotPrimaryDeviceException e) {
-            throw new UserErrorException("This command doesn't work on linked devices.");
         } catch (UnregisteredRecipientException e) {
             throw new UserErrorException("The user " + e.getSender().getIdentifier() + " is not registered.");
         }

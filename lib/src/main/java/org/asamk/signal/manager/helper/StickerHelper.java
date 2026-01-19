@@ -7,10 +7,10 @@ import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.stickerPacks.JsonStickerPack;
 import org.asamk.signal.manager.storage.stickers.StickerPack;
 import org.asamk.signal.manager.util.IOUtils;
+import org.signal.core.util.Hex;
 import org.signal.libsignal.protocol.InvalidMessageException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.internal.util.Hex;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -30,7 +30,9 @@ public class StickerHelper {
     }
 
     public StickerPack addOrUpdateStickerPack(
-            final StickerPackId stickerPackId, final byte[] stickerPackKey, final boolean installed
+            final StickerPackId stickerPackId,
+            final byte[] stickerPackKey,
+            final boolean installed
     ) {
         final var sticker = account.getStickerStore().getStickerPack(stickerPackId);
         if (sticker != null) {
@@ -50,7 +52,8 @@ public class StickerHelper {
     }
 
     public JsonStickerPack getOrRetrieveStickerPack(
-            StickerPackId packId, byte[] packKey
+            StickerPackId packId,
+            byte[] packKey
     ) throws InvalidStickerException {
         try {
             retrieveStickerPack(packId, packKey);

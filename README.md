@@ -11,6 +11,10 @@ For this use-case, it has a daemon mode with JSON-RPC interface ([man page](http
 and D-BUS interface ([man page](https://github.com/AsamK/signal-cli/blob/master/man/signal-cli-dbus.5.adoc)) .
 For the JSON-RPC interface there's also a simple [example client](https://github.com/AsamK/signal-cli/tree/master/client), written in Rust.
 
+signal-cli needs to be kept up-to-date to keep up with Signal-Server changes.
+The official Signal clients expire after three months and then the Signal-Server can make incompatible changes.
+So signal-cli releases older than three months may not work correctly.
+
 ## Installation
 
 You can [build signal-cli](#building) yourself or use
@@ -26,15 +30,24 @@ System requirements:
   systems/architectures
   see: [Provide native lib for libsignal](https://github.com/AsamK/signal-cli/wiki/Provide-native-lib-for-libsignal)
 
-### Install system-wide on Linux
+### Install system-wide on Linux [ JVM build ]
 
 See [latest version](https://github.com/AsamK/signal-cli/releases).
 
 ```sh
-export VERSION=<latest version, format "x.y.z">
-wget https://github.com/AsamK/signal-cli/releases/download/v"${VERSION}"/signal-cli-"${VERSION}".tar.gz
+VERSION=$(curl -Ls -o /dev/null -w %{url_effective} https://github.com/AsamK/signal-cli/releases/latest | sed -e 's/^.*\/v//')
+curl -L -O https://github.com/AsamK/signal-cli/releases/download/v"${VERSION}"/signal-cli-"${VERSION}".tar.gz
 sudo tar xf signal-cli-"${VERSION}".tar.gz -C /opt
 sudo ln -sf /opt/signal-cli-"${VERSION}"/bin/signal-cli /usr/local/bin/
+```
+
+### Install system-wide on Linux [ GraalVM native build ]
+
+```sh
+VERSION=$(curl -Ls -o /dev/null -w %{url_effective} https://github.com/AsamK/signal-cli/releases/latest | sed -e 's/^.*\/v//')
+curl -L -O https://github.com/AsamK/signal-cli/releases/download/v"${VERSION}"/signal-cli-"${VERSION}"-Linux-native.tar.gz
+sudo tar xf signal-cli-"${VERSION}"-Linux-native.tar.gz -C /opt
+sudo ln -sf /opt/signal-cli /usr/local/bin/
 ```
 
 You can find further instructions on the Wiki:
@@ -55,8 +68,15 @@ of all country codes.)
 
       signal-cli -a ACCOUNT register
 
-  You can register Signal using a landline number. In this case you can skip SMS verification process and jump directly
-  to the voice call verification by adding the `--voice` switch at the end of above register command.
+  You can register Signal using a landline number. In this case, you need to follow the procedure below:
+   * Attempt a SMS verification process first (`signal-cli -a ACCOUNT register`)
+     * You will get an error `400 (InvalidTransportModeException)`, this is normal
+   * Wait 60 seconds
+   * Attempt a voice call verification by adding the `--voice` switch and wait for the call:
+
+     ```sh
+     signal-cli -a ACCOUNT register --voice
+     ```
 
   Registering may require solving a CAPTCHA
   challenge: [Registration with captcha](https://github.com/AsamK/signal-cli/wiki/Registration-with-captcha)
@@ -70,6 +90,12 @@ of all country codes.)
 
      ```sh
      signal-cli -a ACCOUNT send -m "This is a message" RECIPIENT
+     ```
+
+* Send a message to a username, usernames need to be prefixed with `u:`
+
+     ```sh
+     signal-cli -a ACCOUNT send -m "This is a message" u:USERNAME.000
      ```
 
 * Pipe the message content from another process.

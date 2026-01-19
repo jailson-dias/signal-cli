@@ -99,6 +99,9 @@ public class App {
                 .help("Disable message send log (for resending messages that recipient couldn't decrypt)")
                 .action(Arguments.storeTrue());
 
+        parser.epilog(
+                "The global arguments are shown with 'signal-cli -h' and need to come before the subcommand, while the subcommand-specific arguments (shown with 'signal-cli SUBCOMMAND -h') need to be given after the subcommand.");
+
         var subparsers = parser.addSubparsers().title("subcommands").dest("command");
 
         Commands.getCommandSubparserAttachers().forEach((key, value) -> {
@@ -292,7 +295,8 @@ public class App {
     }
 
     private RegistrationManager loadRegistrationManager(
-            final String account, final SignalAccountFiles signalAccountFiles
+            final String account,
+            final SignalAccountFiles signalAccountFiles
     ) throws UnexpectedErrorException {
         try {
             return signalAccountFiles.initRegistrationManager(account);
@@ -306,7 +310,8 @@ public class App {
     }
 
     private Manager loadManager(
-            final String account, final SignalAccountFiles signalAccountFiles
+            final String account,
+            final SignalAccountFiles signalAccountFiles
     ) throws CommandException {
         logger.trace("Loading account file for {}", account);
         try {

@@ -8,13 +8,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.asamk.signal.manager.api.TrustLevel;
 import org.asamk.signal.manager.storage.Utils;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
+import org.signal.core.models.ServiceId.ACI;
+import org.signal.core.util.UuidUtil;
 import org.signal.libsignal.protocol.IdentityKey;
 import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.signal.libsignal.protocol.InvalidKeyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.push.ServiceId.ACI;
-import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,7 +32,9 @@ public class LegacyJsonIdentityKeyStore {
     private final int localRegistrationId;
 
     private LegacyJsonIdentityKeyStore(
-            final List<LegacyIdentityInfo> identities, IdentityKeyPair identityKeyPair, int localRegistrationId
+            final List<LegacyIdentityInfo> identities,
+            IdentityKeyPair identityKeyPair,
+            int localRegistrationId
     ) {
         this.identities = identities;
         this.identityKeyPair = identityKeyPair;
@@ -77,12 +79,18 @@ public class LegacyJsonIdentityKeyStore {
 
         @Override
         public LegacyJsonIdentityKeyStore deserialize(
-                JsonParser jsonParser, DeserializationContext deserializationContext
+                JsonParser jsonParser,
+                DeserializationContext deserializationContext
         ) throws IOException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
             var localRegistrationId = node.get("registrationId").asInt();
-            var identityKeyPair = new IdentityKeyPair(Base64.getDecoder().decode(node.get("identityKey").asText()));
+            IdentityKeyPair identityKeyPair = null;
+            try {
+                identityKeyPair = new IdentityKeyPair(Base64.getDecoder().decode(node.get("identityKey").asText()));
+            } catch (InvalidKeyException e) {
+                throw new IOException("Invalid stored identity key pair", e);
+            }
 
             var identities = new ArrayList<LegacyIdentityInfo>();
 
@@ -91,7 +99,7 @@ public class LegacyJsonIdentityKeyStore {
                 for (var trustedKey : trustedKeysNode) {
                     var trustedKeyName = trustedKey.hasNonNull("name") ? trustedKey.get("name").asText() : null;
 
-                    if (UuidUtil.isUuid(trustedKeyName)) {
+                    if (UuidUtil.INSTANCE.isUuid(trustedKeyName)) {
                         // Ignore identities that were incorrectly created with UUIDs as name
                         continue;
                     }

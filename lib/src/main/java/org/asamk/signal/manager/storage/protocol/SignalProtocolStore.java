@@ -4,7 +4,9 @@ import org.signal.libsignal.protocol.IdentityKey;
 import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.signal.libsignal.protocol.InvalidKeyIdException;
 import org.signal.libsignal.protocol.NoSessionException;
+import org.signal.libsignal.protocol.ReusedBaseKeyException;
 import org.signal.libsignal.protocol.SignalProtocolAddress;
+import org.signal.libsignal.protocol.ecc.ECPublicKey;
 import org.signal.libsignal.protocol.groups.state.SenderKeyRecord;
 import org.signal.libsignal.protocol.state.IdentityKeyStore;
 import org.signal.libsignal.protocol.state.KyberPreKeyRecord;
@@ -65,7 +67,7 @@ public class SignalProtocolStore implements SignalServiceAccountDataStore {
     }
 
     @Override
-    public boolean saveIdentity(SignalProtocolAddress address, IdentityKey identityKey) {
+    public IdentityChange saveIdentity(SignalProtocolAddress address, IdentityKey identityKey) {
         return identityKeyStore.saveIdentity(address, identityKey);
     }
 
@@ -172,7 +174,9 @@ public class SignalProtocolStore implements SignalServiceAccountDataStore {
 
     @Override
     public void storeSenderKey(
-            final SignalProtocolAddress sender, final UUID distributionId, final SenderKeyRecord record
+            final SignalProtocolAddress sender,
+            final UUID distributionId,
+            final SenderKeyRecord record
     ) {
         senderKeyStore.storeSenderKey(sender, distributionId, record);
     }
@@ -189,7 +193,8 @@ public class SignalProtocolStore implements SignalServiceAccountDataStore {
 
     @Override
     public void markSenderKeySharedWith(
-            final DistributionId distributionId, final Collection<SignalProtocolAddress> addresses
+            final DistributionId distributionId,
+            final Collection<SignalProtocolAddress> addresses
     ) {
         senderKeyStore.markSenderKeySharedWith(distributionId, addresses);
     }
@@ -225,8 +230,12 @@ public class SignalProtocolStore implements SignalServiceAccountDataStore {
     }
 
     @Override
-    public void markKyberPreKeyUsed(final int kyberPreKeyId) {
-        kyberPreKeyStore.markKyberPreKeyUsed(kyberPreKeyId);
+    public void markKyberPreKeyUsed(
+            final int kyberPreKeyId,
+            final int signedPreKeyId,
+            final ECPublicKey baseKey
+    ) throws ReusedBaseKeyException {
+        kyberPreKeyStore.markKyberPreKeyUsed(kyberPreKeyId, signedPreKeyId, baseKey);
     }
 
     @Override

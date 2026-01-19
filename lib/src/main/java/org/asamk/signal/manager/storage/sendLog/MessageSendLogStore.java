@@ -4,13 +4,13 @@ import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.manager.storage.Database;
 import org.asamk.signal.manager.storage.Utils;
+import org.signal.core.models.ServiceId;
 import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.groups.GroupMasterKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.crypto.ContentHint;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
-import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.internal.push.Content;
 
 import java.io.IOException;
@@ -83,7 +83,10 @@ public class MessageSendLogStore implements AutoCloseable {
     }
 
     public List<MessageSendLogEntry> findMessages(
-            final ServiceId serviceId, final int deviceId, final long timestamp, final boolean isSenderKey
+            final ServiceId serviceId,
+            final int deviceId,
+            final long timestamp,
+            final boolean isSenderKey
     ) {
         final var sql = """
                         SELECT group_id, content, content_hint, urgent
@@ -111,7 +114,10 @@ public class MessageSendLogStore implements AutoCloseable {
     }
 
     public long insertIfPossible(
-            long sentTimestamp, SendMessageResult sendMessageResult, ContentHint contentHint, boolean urgent
+            long sentTimestamp,
+            SendMessageResult sendMessageResult,
+            ContentHint contentHint,
+            boolean urgent
     ) {
         if (sendLogDisabled) {
             return -1;
@@ -129,7 +135,10 @@ public class MessageSendLogStore implements AutoCloseable {
     }
 
     public long insertIfPossible(
-            long sentTimestamp, List<SendMessageResult> sendMessageResults, ContentHint contentHint, boolean urgent
+            long sentTimestamp,
+            List<SendMessageResult> sendMessageResults,
+            ContentHint contentHint,
+            boolean urgent
     ) {
         if (sendLogDisabled) {
             return -1;
@@ -164,7 +173,8 @@ public class MessageSendLogStore implements AutoCloseable {
     }
 
     public void addRecipientToExistingEntryIfPossible(
-            final long contentId, final List<SendMessageResult> sendMessageResults
+            final long contentId,
+            final List<SendMessageResult> sendMessageResults
     ) {
         if (sendLogDisabled) {
             return;
@@ -322,7 +332,8 @@ public class MessageSendLogStore implements AutoCloseable {
     }
 
     private void insertRecipientsForExistingContent(
-            final long contentId, final List<RecipientDevices> recipientDevices
+            final long contentId,
+            final List<RecipientDevices> recipientDevices
     ) {
         try (final var connection = database.getConnection()) {
             connection.setAutoCommit(false);
@@ -334,7 +345,9 @@ public class MessageSendLogStore implements AutoCloseable {
     }
 
     private void insertRecipientsForExistingContent(
-            final long contentId, final List<RecipientDevices> recipientDevices, final Connection connection
+            final long contentId,
+            final List<RecipientDevices> recipientDevices,
+            final Connection connection
     ) throws SQLException {
         final var sql = """
                         INSERT INTO %s (address, device_id, content_id)

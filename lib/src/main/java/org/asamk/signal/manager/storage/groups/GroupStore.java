@@ -3,6 +3,7 @@ package org.asamk.signal.manager.storage.groups;
 import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.api.GroupIdV1;
 import org.asamk.signal.manager.api.GroupIdV2;
+import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.manager.storage.Database;
 import org.asamk.signal.manager.storage.Utils;
@@ -10,15 +11,16 @@ import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.recipients.RecipientIdCreator;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.asamk.signal.manager.util.KeyUtils;
+import org.signal.core.util.UuidUtil;
 import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.groups.GroupMasterKey;
 import org.signal.libsignal.zkgroup.groups.GroupSecretParams;
+import org.signal.libsignal.zkgroup.groupsend.GroupSendEndorsement;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.DistributionId;
 import org.whispersystems.signalservice.api.storage.StorageId;
-import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -39,6 +41,7 @@ public class GroupStore {
 
     private static final Logger logger = LoggerFactory.getLogger(GroupStore.class);
     private static final String TABLE_GROUP_V2 = "group_v2";
+    private static final String TABLE_GROUP_V2_MEMBER = "group_v2_member";
     private static final String TABLE_GROUP_V1 = "group_v1";
     private static final String TABLE_GROUP_V1_MEMBER = "group_v1_member";
 
@@ -58,9 +61,17 @@ public class GroupStore {
                                       master_key BLOB NOT NULL,
                                       group_data BLOB,
                                       distribution_id BLOB UNIQUE NOT NULL,
+                                      endorsement_expiration_time INTEGER NOT NULL DEFAULT 0,
                                       blocked INTEGER NOT NULL DEFAULT FALSE,
                                       profile_sharing INTEGER NOT NULL DEFAULT FALSE,
                                       permission_denied INTEGER NOT NULL DEFAULT FALSE
+                                    ) STRICT;
+                                    CREATE TABLE group_v2_member (
+                                      _id INTEGER PRIMARY KEY,
+                                      group_id INTEGER NOT NULL REFERENCES group_v2 (_id) ON DELETE CASCADE,
+                                      recipient_id INTEGER NOT NULL REFERENCES recipient (_id) ON DELETE CASCADE,
+                                      endorsement BLOB NOT NULL,
+                                      UNIQUE(group_id, recipient_id)
                                     ) STRICT;
                                     CREATE TABLE group_v1 (
                                       _id INTEGER PRIMARY KEY,
@@ -100,7 +111,7 @@ public class GroupStore {
             updateGroup(connection, group);
             connection.commit();
         } catch (SQLException e) {
-            throw new RuntimeException("Failed update recipient store", e);
+            throw new RuntimeException("Failed update group store", e);
         }
     }
 
@@ -120,8 +131,119 @@ public class GroupStore {
         insertOrReplaceGroup(connection, internalId, group);
     }
 
+    public void updateGroupEndorsements(
+            final GroupIdV2 groupId,
+            final long expirationMs,
+            Map<RecipientId, GroupSendEndorsement> endorsements
+    ) {
+        try (final var connection = database.getConnection()) {
+            connection.setAutoCommit(false);
+            final var sql = (
+                    """
+                    UPDATE %s
+                    SET endorsement_expiration_time = ?
+                    WHERE group_id = ?
+                    RETURNING _id
+                    """
+            ).formatted(TABLE_GROUP_V2);
+            long internalId;
+            try (final var statement = connection.prepareStatement(sql)) {
+                statement.setLong(1, endorsements == null ? 0 : expirationMs);
+                statement.setBytes(2, groupId.serialize());
+                final var result = Utils.executeQueryForOptional(statement, Utils::getIdMapper);
+                if (result.isEmpty()) {
+                    return;
+                }
+                internalId = result.get();
+            }
+
+            final var sqlDeleteMembers = "DELETE FROM %s where group_id = ?".formatted(TABLE_GROUP_V2_MEMBER);
+            try (final var statement = connection.prepareStatement(sqlDeleteMembers)) {
+                statement.setLong(1, internalId);
+                statement.executeUpdate();
+            }
+
+            if (endorsements != null) {
+                final var sqlInsertMember = """
+                                            INSERT INTO %s (group_id, recipient_id, endorsement)
+                                            VALUES (?, ?, ?)
+                                            ON CONFLICT (group_id, recipient_id) DO UPDATE SET endorsement=excluded.endorsement
+                                            """.formatted(TABLE_GROUP_V2_MEMBER);
+                try (final var statement = connection.prepareStatement(sqlInsertMember)) {
+                    for (final var entry : endorsements.entrySet()) {
+                        final var recipientId = entry.getKey();
+                        final var endorsement = entry.getValue();
+                        statement.setLong(1, internalId);
+                        statement.setLong(2, recipientId.id());
+                        statement.setBytes(3, endorsement.serialize());
+                        statement.executeUpdate();
+                    }
+                }
+            }
+            connection.commit();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed update group store", e);
+        }
+    }
+
+    public long getGroupEndorsementExpirationMs(final GroupIdV2 groupId) {
+        final var sql = (
+                """
+                SELECT g.endorsement_expiration_time
+                FROM %s g
+                WHERE g.group_id = ?
+                """
+        ).formatted(TABLE_GROUP_V2);
+        try (final var connection = database.getConnection()) {
+            try (final var statement = connection.prepareStatement(sql)) {
+                statement.setBytes(1, groupId.serialize());
+                return Utils.executeQueryForOptional(statement, this::getGroupEndorsementMsFromResultSet).orElse(0L);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed read from group store", e);
+        }
+    }
+
+    public Map<RecipientId, GroupSendEndorsement> getGroupEndorsements(final GroupIdV2 groupId) {
+        final var sql = (
+                """
+                SELECT gm.recipient_id, gm.endorsement
+                FROM %s gm, %s g
+                WHERE gm.group_id = g._id AND g.group_id = ?
+                """
+        ).formatted(TABLE_GROUP_V2_MEMBER, TABLE_GROUP_V2);
+        try (final var connection = database.getConnection()) {
+            try (final var statement = connection.prepareStatement(sql)) {
+                statement.setBytes(1, groupId.serialize());
+                return Utils.executeQueryForStream(statement, this::getGroupEndorsementsFromResultSet)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toMap(Pair::first, Pair::second));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed read from group store", e);
+        }
+    }
+
+    private Pair<RecipientId, GroupSendEndorsement> getGroupEndorsementsFromResultSet(ResultSet resultSet) throws SQLException {
+        final var endorsement = resultSet.getBytes("endorsement");
+        final var recipientId = resultSet.getLong("recipient_id");
+
+        try {
+            return new Pair<>(recipientIdCreator.create(recipientId), new GroupSendEndorsement(endorsement));
+        } catch (InvalidInputException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    private long getGroupEndorsementMsFromResultSet(ResultSet resultSet) throws SQLException {
+        return resultSet.getLong("endorsement_expiration_time");
+    }
+
     public void storeStorageRecord(
-            final Connection connection, final GroupId groupId, final StorageId storageId, final byte[] storageRecord
+            final Connection connection,
+            final GroupId groupId,
+            final StorageId storageId,
+            final byte[] storageRecord
     ) throws SQLException {
         final var groupTable = groupId instanceof GroupIdV1 ? TABLE_GROUP_V1 : TABLE_GROUP_V2;
         final var deleteSql = (
@@ -250,7 +372,8 @@ public class GroupStore {
     }
 
     public GroupInfoV2 getGroupOrPartialMigrate(
-            Connection connection, final GroupMasterKey groupMasterKey
+            Connection connection,
+            final GroupMasterKey groupMasterKey
     ) throws SQLException {
         final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupMasterKey);
         final var groupId = GroupUtils.getGroupIdV2(groupSecretParams);
@@ -258,9 +381,7 @@ public class GroupStore {
         return getGroupOrPartialMigrate(connection, groupMasterKey, groupId);
     }
 
-    public GroupInfoV2 getGroupOrPartialMigrate(
-            final GroupMasterKey groupMasterKey, final GroupIdV2 groupId
-    ) {
+    public GroupInfoV2 getGroupOrPartialMigrate(final GroupMasterKey groupMasterKey, final GroupIdV2 groupId) {
         try (final var connection = database.getConnection()) {
             return getGroupOrPartialMigrate(connection, groupMasterKey, groupId);
         } catch (SQLException e) {
@@ -269,7 +390,9 @@ public class GroupStore {
     }
 
     private GroupInfoV2 getGroupOrPartialMigrate(
-            Connection connection, final GroupMasterKey groupMasterKey, final GroupIdV2 groupId
+            Connection connection,
+            final GroupMasterKey groupMasterKey,
+            final GroupIdV2 groupId
     ) throws SQLException {
         switch (getGroup(connection, (GroupId) groupId)) {
             case GroupInfoV1 groupInfoV1 -> {
@@ -325,21 +448,38 @@ public class GroupStore {
     }
 
     public void mergeRecipients(
-            final Connection connection, final RecipientId recipientId, final RecipientId toBeMergedRecipientId
+            final Connection connection,
+            final RecipientId recipientId,
+            final RecipientId toBeMergedRecipientId
     ) throws SQLException {
-        final var sql = (
+        final var sqlV1 = (
                 """
                 UPDATE OR REPLACE %s
                 SET recipient_id = ?
                 WHERE recipient_id = ?
                 """
         ).formatted(TABLE_GROUP_V1_MEMBER);
-        try (final var statement = connection.prepareStatement(sql)) {
+        try (final var statement = connection.prepareStatement(sqlV1)) {
             statement.setLong(1, recipientId.id());
             statement.setLong(2, toBeMergedRecipientId.id());
             final var updatedRows = statement.executeUpdate();
             if (updatedRows > 0) {
-                logger.debug("Updated {} group members when merging recipients", updatedRows);
+                logger.debug("Updated {} group v1 members when merging recipients", updatedRows);
+            }
+        }
+        final var sqlV2 = (
+                """
+                UPDATE OR REPLACE %s
+                SET recipient_id = ?
+                WHERE recipient_id = ?
+                """
+        ).formatted(TABLE_GROUP_V2_MEMBER);
+        try (final var statement = connection.prepareStatement(sqlV2)) {
+            statement.setLong(1, recipientId.id());
+            statement.setLong(2, toBeMergedRecipientId.id());
+            final var updatedRows = statement.executeUpdate();
+            if (updatedRows > 0) {
+                logger.debug("Updated {} group v2 members when merging recipients", updatedRows);
             }
         }
     }
@@ -360,7 +500,9 @@ public class GroupStore {
     }
 
     public void updateStorageIds(
-            Connection connection, Map<GroupIdV1, StorageId> storageIdV1Map, Map<GroupIdV2, StorageId> storageIdV2Map
+            Connection connection,
+            Map<GroupIdV1, StorageId> storageIdV1Map,
+            Map<GroupIdV2, StorageId> storageIdV2Map
     ) throws SQLException {
         final var sql = (
                 """
@@ -385,9 +527,7 @@ public class GroupStore {
         }
     }
 
-    public void updateStorageId(
-            Connection connection, GroupId groupId, StorageId storageId
-    ) throws SQLException {
+    public void updateStorageId(Connection connection, GroupId groupId, StorageId storageId) throws SQLException {
         final var sqlV1 = (
                 """
                 UPDATE %s
@@ -460,7 +600,9 @@ public class GroupStore {
     }
 
     private void insertOrReplaceGroup(
-            final Connection connection, Long internalId, final GroupInfo group
+            final Connection connection,
+            Long internalId,
+            final GroupInfo group
     ) throws SQLException {
         if (group instanceof GroupInfoV1 groupV1) {
             if (internalId != null) {
@@ -471,8 +613,9 @@ public class GroupStore {
                 }
             }
             final var sql = """
-                            INSERT OR REPLACE INTO %s (_id, group_id, group_id_v2, name, color, expiration_time, blocked, archived, storage_id)
+                            INSERT INTO %s (_id, group_id, group_id_v2, name, color, expiration_time, blocked, archived, storage_id)
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            ON CONFLICT (_id) DO UPDATE SET group_id=excluded.group_id, group_id_v2=excluded.group_id_v2, name=excluded.name, color=excluded.color, expiration_time=excluded.expiration_time, blocked=excluded.blocked, archived=excluded.archived, storage_id=excluded.storage_id
                             RETURNING _id
                             """.formatted(TABLE_GROUP_V1);
             try (final var statement = connection.prepareStatement(sql)) {
@@ -500,8 +643,9 @@ public class GroupStore {
                 }
             }
             final var sqlInsertMember = """
-                                        INSERT OR REPLACE INTO %s (group_id, recipient_id)
+                                        INSERT INTO %s (group_id, recipient_id)
                                         VALUES (?, ?)
+                                        ON CONFLICT (group_id, recipient_id) DO NOTHING
                                         """.formatted(TABLE_GROUP_V1_MEMBER);
             try (final var statement = connection.prepareStatement(sqlInsertMember)) {
                 for (final var recipient : groupV1.getMembers()) {
@@ -513,8 +657,9 @@ public class GroupStore {
         } else if (group instanceof GroupInfoV2 groupV2) {
             final var sql = (
                     """
-                    INSERT OR REPLACE INTO %s (_id, group_id, master_key, group_data, distribution_id, blocked, permission_denied, storage_id, profile_sharing)
+                    INSERT INTO %s (_id, group_id, master_key, group_data, distribution_id, blocked, permission_denied, storage_id, profile_sharing)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT (_id) DO UPDATE SET group_id=excluded.group_id, master_key=excluded.master_key, group_data=excluded.group_data, distribution_id=excluded.distribution_id, blocked=excluded.blocked, permission_denied=excluded.permission_denied, storage_id=excluded.storage_id, profile_sharing=excluded.profile_sharing
                     """
             ).formatted(TABLE_GROUP_V2);
             try (final var statement = connection.prepareStatement(sql)) {

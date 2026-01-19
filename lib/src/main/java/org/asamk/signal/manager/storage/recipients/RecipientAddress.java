@@ -1,8 +1,8 @@
 package org.asamk.signal.manager.storage.recipients;
 
-import org.whispersystems.signalservice.api.push.ServiceId;
-import org.whispersystems.signalservice.api.push.ServiceId.ACI;
-import org.whispersystems.signalservice.api.push.ServiceId.PNI;
+import org.signal.core.models.ServiceId;
+import org.signal.core.models.ServiceId.ACI;
+import org.signal.core.models.ServiceId.PNI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.Optional;
@@ -27,7 +27,7 @@ public record RecipientAddress(
             pni = Optional.empty();
         }
         if (aci.isEmpty() && pni.isEmpty() && number.isEmpty() && username.isEmpty()) {
-            throw new AssertionError("Must have either a ServiceId, username or E164 number!");
+            throw new InvalidAddress("Must have either a ServiceId, username or E164 number!");
         }
     }
 
@@ -69,8 +69,8 @@ public record RecipientAddress(
     }
 
     public RecipientAddress(org.asamk.signal.manager.api.RecipientAddress address) {
-        this(address.aci().map(ACI::parseOrNull),
-                address.pni().map(PNI::parseOrNull),
+        this(address.aci().map(ACI::parseOrThrow),
+                address.pni().map(PNI::parseOrThrow),
                 address.number(),
                 address.username());
     }
@@ -79,11 +79,11 @@ public record RecipientAddress(
         this(Optional.of(serviceId), Optional.empty());
     }
 
-    public RecipientAddress withIdentifiersFrom(RecipientAddress address) {
-        return new RecipientAddress(address.aci.or(this::aci),
-                address.pni.or(this::pni),
-                address.number.or(this::number),
-                address.username.or(this::username));
+    public RecipientAddress withOtherIdentifiersFrom(RecipientAddress address) {
+        return new RecipientAddress(this.aci.or(address::aci),
+                this.pni.or(address::pni),
+                this.number.or(address::number),
+                this.username.or(address::username));
     }
 
     public RecipientAddress removeIdentifiersFrom(RecipientAddress address) {

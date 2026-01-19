@@ -48,9 +48,7 @@ public class SendCommand implements JsonRpcLocalCommand {
         subparser.addArgument("recipient").help("Specify the recipients' phone number.").nargs("*");
         subparser.addArgument("-g", "--group-id", "--group").help("Specify the recipient group ID.").nargs("*");
         subparser.addArgument("-u", "--username").help("Specify the recipient username or username link.").nargs("*");
-        subparser.addArgument("--note-to-self")
-                .help("Send the message to self without notification.")
-                .action(Arguments.storeTrue());
+        subparser.addArgument("--note-to-self").help("Send the message to self.").action(Arguments.storeTrue());
         subparser.addArgument("--notify-self")
                 .help("If self is part of recipients/groups send a normal message, not a sync message.")
                 .action(Arguments.storeTrue());
@@ -66,6 +64,9 @@ public class SendCommand implements JsonRpcLocalCommand {
                 .help("Add an attachment. "
                         + "Can be either a file path or a data URI. Data URI encoded attachments must follow the RFC 2397. Additionally a file name can be added, e.g. "
                         + "data:<MIME-TYPE>;filename=<FILENAME>;base64,<BASE64 ENCODED DATA>.");
+        subparser.addArgument("--view-once")
+                .action(Arguments.storeTrue())
+                .help("Send the message as a view once message");
         subparser.addArgument("-e", "--end-session", "--endsession")
                 .help("Clear session state and send end session message.")
                 .action(Arguments.storeTrue());
@@ -108,7 +109,9 @@ public class SendCommand implements JsonRpcLocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final Manager m, final OutputWriter outputWriter
+            final Namespace ns,
+            final Manager m,
+            final OutputWriter outputWriter
     ) throws CommandException {
         final var notifySelf = Boolean.TRUE.equals(ns.getBoolean("notify-self"));
         final var isNoteToSelf = Boolean.TRUE.equals(ns.getBoolean("note-to-self"));
@@ -162,6 +165,7 @@ public class SendCommand implements JsonRpcLocalCommand {
         if (attachments == null) {
             attachments = List.of();
         }
+        final var viewOnce = Boolean.TRUE.equals(ns.getBoolean("view-once"));
 
         final var selfNumber = m.getSelfNumber();
 
@@ -177,6 +181,9 @@ public class SendCommand implements JsonRpcLocalCommand {
         final var quoteTimestamp = ns.getLong("quote-timestamp");
         if (quoteTimestamp != null) {
             final var quoteAuthor = ns.getString("quote-author");
+            if (quoteAuthor == null) {
+                throw new UserErrorException("Quote author parameter is missing");
+            }
             final var quoteMessage = ns.getString("quote-message");
             final var quoteMentionStrings = ns.<String>getList("quote-mention");
             final var quoteMentions = quoteMentionStrings == null
@@ -234,6 +241,7 @@ public class SendCommand implements JsonRpcLocalCommand {
         try {
             final var message = new Message(messageText,
                     attachments,
+                    viewOnce,
                     mentions,
                     Optional.ofNullable(quote),
                     Optional.ofNullable(sticker),
@@ -245,8 +253,14 @@ public class SendCommand implements JsonRpcLocalCommand {
                     : m.sendMessage(message, recipientIdentifiers, notifySelf);
             outputResult(outputWriter, results);
         } catch (AttachmentInvalidException | IOException e) {
-            throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
-                    .getSimpleName() + ")", e);
+            if (e instanceof IOException io && io.getMessage().contains("No prekeys available")) {
+                throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
+                        .getSimpleName() + "), maybe one of the devices of the recipient wasn't online for a while.",
+                        e);
+            } else {
+                throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
+                        .getSimpleName() + ")", e);
+            }
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new UserErrorException(e.getMessage());
         } catch (UnregisteredRecipientException e) {
@@ -257,7 +271,8 @@ public class SendCommand implements JsonRpcLocalCommand {
     }
 
     private List<Message.Mention> parseMentions(
-            final String selfNumber, final List<String> mentionStrings
+            final String selfNumber,
+            final List<String> mentionStrings
     ) throws UserErrorException {
         final var mentionPattern = Pattern.compile("(\\d+):(\\d+):(.+)");
         final var mentions = new ArrayList<Message.Mention>();

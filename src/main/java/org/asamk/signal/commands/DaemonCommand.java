@@ -92,10 +92,12 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final Manager m, final OutputWriter outputWriter
+            final Namespace ns,
+            final Manager m,
+            final OutputWriter outputWriter
     ) throws CommandException {
         Shutdown.installHandler();
-        logger.info("Starting daemon in single-account mode for " + m.getSelfNumber());
+        logger.info("Starting daemon in single-account mode for {}", m.getSelfNumber());
         final var noReceiveStdOut = Boolean.TRUE.equals(ns.getBoolean("no-receive-stdout"));
         final var receiveMode = ns.<ReceiveMode>get("receive-mode");
         final var receiveConfig = getReceiveConfig(ns);
@@ -117,7 +119,9 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final MultiAccountManager c, final OutputWriter outputWriter
+            final Namespace ns,
+            final MultiAccountManager c,
+            final OutputWriter outputWriter
     ) throws CommandException {
         Shutdown.installHandler();
         logger.info("Starting daemon in multi-account mode");

@@ -9,12 +9,12 @@ import org.asamk.signal.manager.jobs.CleanOldPreKeysJob;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.messageCache.CachedMessage;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
+import org.signal.core.models.ServiceId;
+import org.signal.core.models.ServiceId.ACI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.SignalWebSocket;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
-import org.whispersystems.signalservice.api.push.ServiceId;
-import org.whispersystems.signalservice.api.push.ServiceId.ACI;
+import org.whispersystems.signalservice.api.websocket.SignalWebSocket;
 import org.whispersystems.signalservice.api.websocket.WebSocketConnectionState;
 import org.whispersystems.signalservice.api.websocket.WebSocketUnavailableException;
 
@@ -25,10 +25,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
-import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class ReceiveHelper {
@@ -74,7 +74,7 @@ public class ReceiveHelper {
     public void receiveMessagesContinuously(Manager.ReceiveMessageHandler handler) {
         while (!shouldStop) {
             try {
-                receiveMessages(Duration.ofMinutes(1), false, null, handler);
+                receiveMessages(Optional.empty(), null, handler);
                 break;
             } catch (IOException e) {
                 logger.warn("Receiving messages failed, retrying", e);
@@ -83,7 +83,9 @@ public class ReceiveHelper {
     }
 
     public void receiveMessages(
-            Duration timeout, boolean returnOnTimeout, Integer maxMessages, Manager.ReceiveMessageHandler handler
+            Optional<Duration> timeout,
+            Integer maxMessages,
+            Manager.ReceiveMessageHandler handler
     ) throws IOException {
         account.setNeedsToRetryFailedMessages(true);
         hasCaughtUpWithOldMessages = false;
@@ -91,21 +93,22 @@ public class ReceiveHelper {
         // Use a Map here because java Set doesn't have a get method ...
         Map<HandleAction, HandleAction> queuedActions = new HashMap<>();
 
-        final var signalWebSocket = dependencies.getSignalWebSocket();
-        final var webSocketStateDisposable = Observable.merge(signalWebSocket.getUnidentifiedWebSocketState(),
-                        signalWebSocket.getWebSocketState())
+        final var signalWebSocket = dependencies.getAuthenticatedSignalWebSocket();
+        final var webSocketStateDisposable = signalWebSocket.getState()
                 .subscribeOn(Schedulers.computation())
                 .observeOn(Schedulers.computation())
                 .distinctUntilChanged()
                 .subscribe(this::onWebSocketStateChange);
         signalWebSocket.connect();
+        signalWebSocket.registerKeepAliveToken("receive");
 
         try {
-            receiveMessagesInternal(signalWebSocket, timeout, returnOnTimeout, maxMessages, handler, queuedActions);
+            receiveMessagesInternal(signalWebSocket, timeout, maxMessages, handler, queuedActions);
         } finally {
             hasCaughtUpWithOldMessages = false;
             handleQueuedActions(queuedActions.keySet());
             queuedActions.clear();
+            signalWebSocket.removeKeepAliveToken("receive");
             signalWebSocket.disconnect();
             webSocketStateDisposable.dispose();
             shouldStop = false;
@@ -113,9 +116,8 @@ public class ReceiveHelper {
     }
 
     private void receiveMessagesInternal(
-            final SignalWebSocket signalWebSocket,
-            Duration timeout,
-            boolean returnOnTimeout,
+            final SignalWebSocket.AuthenticatedWebSocket signalWebSocket,
+            Optional<Duration> timeout,
             Integer maxMessages,
             Manager.ReceiveMessageHandler handler,
             final Map<HandleAction, HandleAction> queuedActions
@@ -124,6 +126,7 @@ public class ReceiveHelper {
         var backOffCounter = 0;
         isWaitingForMessage = false;
 
+        logger.debug("Start receiving messages");
         while (!shouldStop && remainingMessages != 0) {
             if (account.getNeedsToRetryFailedMessages()) {
                 retryFailedReceivedMessages(handler);
@@ -131,13 +134,17 @@ public class ReceiveHelper {
             SignalServiceEnvelope envelope;
             final CachedMessage[] cachedMessage = {null};
             final var nowMillis = System.currentTimeMillis();
-            if (nowMillis - account.getLastReceiveTimestamp() > 60000) {
+            if (nowMillis - account.getLastReceiveTimestamp() > 4 * 60 * 60 * 1000) {
                 account.setLastReceiveTimestamp(nowMillis);
             }
-            logger.debug("Checking for new message from server");
+            logger.trace("Checking for new message from server");
             try {
                 isWaitingForMessage = true;
-                var queueNotEmpty = signalWebSocket.readMessageBatch(timeout.toMillis(), 1, batch -> {
+                final var timeoutMs = timeout.orElseGet(() -> Duration.ofMinutes(1)).toMillis();
+                if (timeoutMs <= 0L) {
+                    return;
+                }
+                var queueNotEmpty = signalWebSocket.readMessageBatch(timeoutMs, 1, batch -> {
                     logger.debug("Retrieved {} envelopes!", batch.size());
                     isWaitingForMessage = false;
                     for (final var it : batch) {
@@ -202,7 +209,9 @@ public class ReceiveHelper {
                 throw e;
             } catch (TimeoutException e) {
                 backOffCounter = 0;
-                if (returnOnTimeout) return;
+                if (timeout.isPresent()) {
+                    return;
+                }
                 continue;
             } catch (Exception e) {
                 logger.error("Unknown error when receiving messages", e);
@@ -264,7 +273,8 @@ public class ReceiveHelper {
     }
 
     private List<HandleAction> retryFailedReceivedMessage(
-            final Manager.ReceiveMessageHandler handler, final CachedMessage cachedMessage
+            final Manager.ReceiveMessageHandler handler,
+            final CachedMessage cachedMessage
     ) {
         var envelope = cachedMessage.loadEnvelope();
         if (envelope == null) {

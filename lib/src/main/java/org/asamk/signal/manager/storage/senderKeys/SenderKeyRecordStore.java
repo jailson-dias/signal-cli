@@ -3,14 +3,14 @@ package org.asamk.signal.manager.storage.senderKeys;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.storage.Database;
 import org.asamk.signal.manager.storage.Utils;
+import org.signal.core.models.ServiceId;
+import org.signal.core.util.UuidUtil;
 import org.signal.libsignal.protocol.InvalidMessageException;
 import org.signal.libsignal.protocol.SignalProtocolAddress;
 import org.signal.libsignal.protocol.groups.state.SenderKeyRecord;
 import org.signal.libsignal.protocol.groups.state.SenderKeyStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.push.ServiceId;
-import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -59,7 +59,9 @@ public class SenderKeyRecordStore implements SenderKeyStore {
 
     @Override
     public void storeSenderKey(
-            final SignalProtocolAddress address, final UUID distributionId, final SenderKeyRecord record
+            final SignalProtocolAddress address,
+            final UUID distributionId,
+            final SenderKeyRecord record
     ) {
         final var key = getKey(address, distributionId);
 
@@ -165,29 +167,15 @@ public class SenderKeyRecordStore implements SenderKeyStore {
     }
 
     private void storeSenderKey(
-            final Connection connection, final Key key, final SenderKeyRecord senderKeyRecord
+            final Connection connection,
+            final Key key,
+            final SenderKeyRecord senderKeyRecord
     ) throws SQLException {
-        final var sqlUpdate = """
-                              UPDATE %s
-                              SET record = ?
-                              WHERE address = ? AND device_id = ? and distribution_id = ?
-                              """.formatted(TABLE_SENDER_KEY);
-        try (final var statement = connection.prepareStatement(sqlUpdate)) {
-            statement.setBytes(1, senderKeyRecord.serialize());
-            statement.setString(2, key.address());
-            statement.setLong(3, key.deviceId());
-            statement.setBytes(4, UuidUtil.toByteArray(key.distributionId()));
-            final var rows = statement.executeUpdate();
-            if (rows > 0) {
-                return;
-            }
-        }
-
-        // Record doesn't exist yet, creating a new one
         final var sqlInsert = (
                 """
-                INSERT OR REPLACE INTO %s (address, device_id, distribution_id, record, created_timestamp)
+                INSERT INTO %s (address, device_id, distribution_id, record, created_timestamp)
                 VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT (address, device_id, distribution_id) DO UPDATE SET record=excluded.record
                 """
         ).formatted(TABLE_SENDER_KEY);
         try (final var statement = connection.prepareStatement(sqlInsert)) {

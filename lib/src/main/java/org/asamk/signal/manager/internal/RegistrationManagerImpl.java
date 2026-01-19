@@ -21,6 +21,7 @@ import org.asamk.signal.manager.RegistrationManager;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
+import org.asamk.signal.manager.api.PinLockMissingException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.RateLimitException;
 import org.asamk.signal.manager.api.UpdateProfile;
@@ -32,29 +33,26 @@ import org.asamk.signal.manager.helper.PinHelper;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.asamk.signal.manager.util.NumberVerificationUtils;
-import org.asamk.signal.manager.util.Utils;
+import org.signal.core.models.MasterKey;
+import org.signal.core.models.ServiceId.ACI;
+import org.signal.core.models.ServiceId.PNI;
 import org.signal.libsignal.usernames.BaseUsernameException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.account.PreKeyCollection;
-import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
-import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
-import org.whispersystems.signalservice.api.kbs.MasterKey;
-import org.whispersystems.signalservice.api.push.ServiceId.ACI;
-import org.whispersystems.signalservice.api.push.ServiceId.PNI;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.AlreadyVerifiedException;
 import org.whispersystems.signalservice.api.push.exceptions.DeprecatedVersionException;
 import org.whispersystems.signalservice.api.svr.SecureValueRecovery;
-import org.whispersystems.signalservice.internal.push.PushServiceSocket;
 import org.whispersystems.signalservice.internal.push.VerifyAccountResponse;
 
 import java.io.IOException;
 import java.util.function.Consumer;
 
 import static org.asamk.signal.manager.util.KeyUtils.generatePreKeysForType;
+import static org.asamk.signal.manager.util.Utils.handleResponseException;
 
 public class RegistrationManagerImpl implements RegistrationManager {
 
@@ -105,7 +103,9 @@ public class RegistrationManagerImpl implements RegistrationManager {
 
     @Override
     public void register(
-            boolean voiceVerification, String captcha, final boolean forceRegister
+            boolean voiceVerification,
+            String captcha,
+            final boolean forceRegister
     ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, RateLimitException, VerificationMethodNotAvailableException {
         if (account.isRegistered()
                 && account.getServiceEnvironment() != null
@@ -130,12 +130,15 @@ public class RegistrationManagerImpl implements RegistrationManager {
             }
 
             final var registrationApi = unauthenticatedAccountManager.getRegistrationApi();
+            logger.trace("Creating verification session");
             String sessionId = NumberVerificationUtils.handleVerificationSession(registrationApi,
                     account.getSessionId(account.getNumber()),
                     id -> account.setSessionId(account.getNumber(), id),
                     voiceVerification,
                     captcha);
+            logger.trace("Requesting verification code");
             NumberVerificationUtils.requestVerificationCode(registrationApi, sessionId, voiceVerification);
+            logger.debug("Successfully requested verification code");
             account.setRegistered(false);
         } catch (DeprecatedVersionException e) {
             logger.debug("Signal-Server returned deprecated version exception", e);
@@ -145,8 +148,9 @@ public class RegistrationManagerImpl implements RegistrationManager {
 
     @Override
     public void verifyAccount(
-            String verificationCode, String pin
-    ) throws IOException, PinLockedException, IncorrectPinException {
+            String verificationCode,
+            String pin
+    ) throws IOException, PinLockedException, IncorrectPinException, PinLockMissingException {
         if (account.isRegistered()) {
             throw new IOException("Account is already registered");
         }
@@ -157,7 +161,11 @@ public class RegistrationManagerImpl implements RegistrationManager {
 
         final var aciPreKeys = generatePreKeysForType(account.getAccountData(ServiceIdType.ACI));
         final var pniPreKeys = generatePreKeysForType(account.getAccountData(ServiceIdType.PNI));
-        final var result = NumberVerificationUtils.verifyNumber(account.getSessionId(account.getNumber()),
+        final var sessionId = account.getSessionId(account.getNumber());
+        if (sessionId == null) {
+            throw new IOException("No registration verification session active");
+        }
+        final var result = NumberVerificationUtils.verifyNumber(sessionId,
                 verificationCode,
                 pin,
                 pinHelper,
@@ -196,7 +204,7 @@ public class RegistrationManagerImpl implements RegistrationManager {
             final var aciPreKeys = generatePreKeysForType(account.getAccountData(ServiceIdType.ACI));
             final var pniPreKeys = generatePreKeysForType(account.getAccountData(ServiceIdType.PNI));
             final var registrationApi = unauthenticatedAccountManager.getRegistrationApi();
-            final var response = Utils.handleResponseException(registrationApi.registerAccount(null,
+            final var response = handleResponseException(registrationApi.registerAccount(null,
                     recoveryPassword,
                     account.getAccountAttributes(null),
                     aciPreKeys,
@@ -218,8 +226,14 @@ public class RegistrationManagerImpl implements RegistrationManager {
 
     private boolean attemptReactivateAccount() {
         try {
-            final var accountManager = createAuthenticatedSignalServiceAccountManager();
-            accountManager.setAccountAttributes(account.getAccountAttributes(null));
+            final var dependencies = new SignalDependencies(serviceEnvironmentConfig,
+                    userAgent,
+                    account.getCredentialsProvider(),
+                    account.getSignalServiceDataStore(),
+                    null,
+                    new ReentrantSignalSessionLock());
+            handleResponseException(dependencies.getAccountApi()
+                    .setAccountAttributes(account.getAccountAttributes(null)));
             account.setRegistered(true);
             logger.info("Reactivated existing account, verify is not necessary.");
             if (newManagerListener != null) {
@@ -238,17 +252,6 @@ public class RegistrationManagerImpl implements RegistrationManager {
         return false;
     }
 
-    private SignalServiceAccountManager createAuthenticatedSignalServiceAccountManager() {
-        final var clientZkOperations = ClientZkOperations.create(serviceEnvironmentConfig.signalServiceConfiguration());
-        final var pushServiceSocket = new PushServiceSocket(serviceEnvironmentConfig.signalServiceConfiguration(),
-                account.getCredentialsProvider(),
-                userAgent,
-                clientZkOperations.getProfileOperations(),
-                ServiceConfig.AUTOMATIC_NETWORK_RETRY);
-        final var groupsV2Operations = new GroupsV2Operations(clientZkOperations, ServiceConfig.GROUP_MAX_SIZE);
-        return new SignalServiceAccountManager(pushServiceSocket, null, groupsV2Operations);
-    }
-
     private VerifyAccountResponse verifyAccountWithCode(
             final String sessionId,
             final String verificationCode,
@@ -258,11 +261,11 @@ public class RegistrationManagerImpl implements RegistrationManager {
     ) throws IOException {
         final var registrationApi = unauthenticatedAccountManager.getRegistrationApi();
         try {
-            Utils.handleResponseException(registrationApi.verifyAccount(sessionId, verificationCode));
+            handleResponseException(registrationApi.verifyAccount(sessionId, verificationCode));
         } catch (AlreadyVerifiedException e) {
             // Already verified so can continue registering
         }
-        return Utils.handleResponseException(registrationApi.registerAccount(sessionId,
+        return handleResponseException(registrationApi.registerAccount(sessionId,
                 null,
                 account.getAccountAttributes(registrationLock),
                 aciPreKeys,

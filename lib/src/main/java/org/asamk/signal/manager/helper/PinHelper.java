@@ -1,9 +1,9 @@
 package org.asamk.signal.manager.helper;
 
 import org.asamk.signal.manager.api.IncorrectPinException;
+import org.signal.core.models.MasterKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.signalservice.api.svr.SecureValueRecovery;
 import org.whispersystems.signalservice.internal.push.AuthCredentials;
 import org.whispersystems.signalservice.internal.push.LockedException;
@@ -21,15 +21,16 @@ public class PinHelper {
         this.secureValueRecoveries = secureValueRecoveries;
     }
 
-    public void setRegistrationLockPin(
-            String pin, MasterKey masterKey
-    ) throws IOException {
+    public void setRegistrationLockPin(String pin, MasterKey masterKey) throws IOException {
         IOException exception = null;
+        var setPinSuccessfully = false;
         for (final var secureValueRecovery : secureValueRecoveries) {
             try {
                 final var backupResponse = secureValueRecovery.setPin(pin, masterKey).execute();
                 switch (backupResponse) {
                     case SecureValueRecovery.BackupResponse.Success success -> {
+                        setPinSuccessfully = true;
+                        logger.trace("PIN set successfully");
                     }
                     case SecureValueRecovery.BackupResponse.ServerRejected serverRejected ->
                             logger.warn("Backup svr failed: ServerRejected");
@@ -46,7 +47,7 @@ public class PinHelper {
                 exception = e;
             }
         }
-        if (exception != null) {
+        if (!setPinSuccessfully && exception != null) {
             throw exception;
         }
     }
@@ -57,11 +58,13 @@ public class PinHelper {
 
     public void removeRegistrationLockPin() throws IOException {
         IOException exception = null;
+        var removedPinSuccessfully = false;
         for (final var secureValueRecovery : secureValueRecoveries) {
             try {
                 final var deleteResponse = secureValueRecovery.deleteData();
                 switch (deleteResponse) {
                     case SecureValueRecovery.DeleteResponse.Success success -> {
+                        removedPinSuccessfully = true;
                     }
                     case SecureValueRecovery.DeleteResponse.ServerRejected serverRejected ->
                             logger.warn("Delete svr2 failed: ServerRejected");
@@ -76,20 +79,25 @@ public class PinHelper {
                 exception = e;
             }
         }
-        if (exception != null) {
+        if (!removedPinSuccessfully && exception != null) {
             throw exception;
         }
     }
 
     public SecureValueRecovery.RestoreResponse.Success getRegistrationLockData(
-            String pin, LockedException lockedException
+            String pin,
+            LockedException lockedException
     ) throws IOException, IncorrectPinException {
         var svr2Credentials = lockedException.getSvr2Credentials();
         if (svr2Credentials != null) {
             IOException exception = null;
             for (final var secureValueRecovery : secureValueRecoveries) {
                 try {
-                    return getRegistrationLockData(secureValueRecovery, svr2Credentials, pin);
+                    final var lockData = getRegistrationLockData(secureValueRecovery, svr2Credentials, pin);
+                    if (lockData == null) {
+                        continue;
+                    }
+                    return lockData;
                 } catch (IOException e) {
                     exception = e;
                 }
@@ -103,7 +111,9 @@ public class PinHelper {
     }
 
     public SecureValueRecovery.RestoreResponse.Success getRegistrationLockData(
-            SecureValueRecovery secureValueRecovery, AuthCredentials authCredentials, String pin
+            SecureValueRecovery secureValueRecovery,
+            AuthCredentials authCredentials,
+            String pin
     ) throws IOException, IncorrectPinException {
         final var restoreResponse = secureValueRecovery.restoreDataPreRegistration(authCredentials, null, pin);
 

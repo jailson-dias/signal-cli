@@ -3,8 +3,8 @@ package org.asamk.signal.manager.storage.recipients;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.whispersystems.signalservice.api.push.ServiceId.ACI;
-import org.whispersystems.signalservice.api.push.ServiceId.PNI;
+import org.signal.core.models.ServiceId.ACI;
+import org.signal.core.models.ServiceId.PNI;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -111,18 +111,20 @@ class MergeRecipientHelperTest {
             new T(Set.of(rec(1, ADDR_A.ACI), rec(2, ADDR_A.PNI), rec(3, ADDR_A.NUM)),
                     ADDR_A.FULL,
                     Set.of(rec(1, ADDR_A.FULL))),
-            new T(Set.of(rec(1, ADDR_A.ACI.withIdentifiersFrom(ADDR_B.PNI)), rec(2, ADDR_A.PNI), rec(3, ADDR_A.NUM)),
-                    ADDR_A.FULL,
-                    Set.of(rec(1, ADDR_A.FULL))),
-            new T(Set.of(rec(1, ADDR_A.ACI.withIdentifiersFrom(ADDR_B.NUM)), rec(2, ADDR_A.PNI), rec(3, ADDR_A.NUM)),
-                    ADDR_A.FULL,
-                    Set.of(rec(1, ADDR_A.FULL))),
-            new T(Set.of(rec(1, ADDR_A.ACI), rec(2, ADDR_A.PNI), rec(3, ADDR_A.NUM.withIdentifiersFrom(ADDR_B.ACI))),
+            new T(Set.of(rec(1, ADDR_B.PNI.withOtherIdentifiersFrom(ADDR_A.ACI)),
+                    rec(2, ADDR_A.PNI),
+                    rec(3, ADDR_A.NUM)), ADDR_A.FULL, Set.of(rec(1, ADDR_A.FULL))),
+            new T(Set.of(rec(1, ADDR_B.NUM.withOtherIdentifiersFrom(ADDR_A.ACI)),
+                    rec(2, ADDR_A.PNI),
+                    rec(3, ADDR_A.NUM)), ADDR_A.FULL, Set.of(rec(1, ADDR_A.FULL))),
+            new T(Set.of(rec(1, ADDR_A.ACI),
+                    rec(2, ADDR_A.PNI),
+                    rec(3, ADDR_B.ACI.withOtherIdentifiersFrom(ADDR_A.NUM))),
                     ADDR_A.FULL,
                     Set.of(rec(1, ADDR_A.FULL), rec(3, ADDR_B.ACI))),
-            new T(Set.of(rec(1, ADDR_A.ACI), rec(2, ADDR_A.PNI.withIdentifiersFrom(ADDR_B.ACI)), rec(3, ADDR_A.NUM)),
-                    ADDR_A.FULL,
-                    Set.of(rec(1, ADDR_A.FULL), rec(2, ADDR_B.ACI))),
+            new T(Set.of(rec(1, ADDR_A.ACI),
+                    rec(2, ADDR_B.ACI.withOtherIdentifiersFrom(ADDR_A.PNI)),
+                    rec(3, ADDR_A.NUM)), ADDR_A.FULL, Set.of(rec(1, ADDR_A.FULL), rec(2, ADDR_B.ACI))),
     };
 
     @ParameterizedTest
@@ -217,9 +219,7 @@ class MergeRecipientHelperTest {
         }
 
         @Override
-        public void updateRecipientAddress(
-                final RecipientId recipientId, final RecipientAddress address
-        ) {
+        public void updateRecipientAddress(final RecipientId recipientId, final RecipientAddress address) {
             recipients.removeIf(r -> r.id().equals(recipientId));
             recipients.add(new RecipientWithAddress(recipientId, address));
         }

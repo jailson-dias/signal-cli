@@ -16,11 +16,11 @@ import org.asamk.signal.manager.storage.senderKeys.SenderKeyRecordStore;
 import org.asamk.signal.manager.storage.senderKeys.SenderKeySharedStore;
 import org.asamk.signal.manager.storage.sessions.SessionStore;
 import org.asamk.signal.manager.storage.stickers.StickerStore;
+import org.signal.core.models.ServiceId;
+import org.signal.core.models.ServiceId.ACI;
+import org.signal.core.util.UuidUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.push.ServiceId;
-import org.whispersystems.signalservice.api.push.ServiceId.ACI;
-import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.io.File;
 import java.sql.Connection;
@@ -33,7 +33,7 @@ import java.util.UUID;
 public class AccountDatabase extends Database {
 
     private static final Logger logger = LoggerFactory.getLogger(AccountDatabase.class);
-    private static final long DATABASE_VERSION = 27;
+    private static final long DATABASE_VERSION = 28;
 
     private AccountDatabase(final HikariDataSource dataSource) {
         super(logger, DATABASE_VERSION, dataSource);
@@ -608,10 +608,26 @@ public class AccountDatabase extends Database {
                                         """);
             }
         }
+        if (oldVersion < 28) {
+            logger.debug("Updating database: Adding group endorsements");
+            try (final var statement = connection.createStatement()) {
+                statement.executeUpdate("""
+                                        ALTER TABLE group_v2 ADD endorsement_expiration_time INTEGER DEFAULT 0 NOT NULL;
+                                        CREATE TABLE group_v2_member (
+                                          _id INTEGER PRIMARY KEY,
+                                          group_id INTEGER NOT NULL REFERENCES group_v2 (_id) ON DELETE CASCADE,
+                                          recipient_id INTEGER NOT NULL REFERENCES recipient (_id) ON DELETE CASCADE,
+                                          endorsement BLOB NOT NULL,
+                                          UNIQUE(group_id, recipient_id)
+                                        ) STRICT;
+                                        """);
+            }
+        }
     }
 
     private static void createUuidMappingTable(
-            final Connection connection, final Statement statement
+            final Connection connection,
+            final Statement statement
     ) throws SQLException {
         statement.executeUpdate("""
                                 CREATE TABLE tmp_mapping_table (
@@ -630,9 +646,10 @@ public class AccountDatabase extends Database {
         try (final var preparedStatement = connection.prepareStatement(sql)) {
             try (var result = Utils.executeQueryForStream(preparedStatement, (resultSet) -> {
                 final var pni = Optional.ofNullable(resultSet.getBytes("pni"))
-                        .map(UuidUtil::parseOrNull)
+                        .map(UuidUtil.INSTANCE::parseOrNull)
                         .map(ServiceId.PNI::from);
-                final var serviceIdUuid = Optional.ofNullable(resultSet.getBytes("uuid")).map(UuidUtil::parseOrNull);
+                final var serviceIdUuid = Optional.ofNullable(resultSet.getBytes("uuid"))
+                        .map(UuidUtil.INSTANCE::parseOrNull);
                 final var serviceId = serviceIdUuid.isPresent() && pni.isPresent() && serviceIdUuid.get()
                         .equals(pni.get().getRawUuid())
                         ? pni.<ServiceId>map(p -> p)

@@ -1,13 +1,16 @@
 package org.asamk.signal.manager.util;
 
 import org.asamk.signal.manager.api.Pair;
+import org.signal.core.models.ServiceId;
+import org.signal.libsignal.net.BadRequestError;
+import org.signal.libsignal.net.RequestResult;
 import org.signal.libsignal.protocol.IdentityKey;
 import org.signal.libsignal.protocol.fingerprint.Fingerprint;
 import org.signal.libsignal.protocol.fingerprint.NumericFingerprintGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.NetworkResult;
-import org.whispersystems.signalservice.api.push.ServiceId;
+import org.whispersystems.signalservice.api.NetworkResultUtil;
 import org.whispersystems.signalservice.api.util.StreamDetails;
 
 import java.io.ByteArrayInputStream;
@@ -15,9 +18,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.Proxy;
+import java.net.ProxySelector;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -29,6 +37,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import okio.ByteString;
 
 public class Utils {
 
@@ -59,7 +69,10 @@ public class Utils {
     }
 
     public static Fingerprint computeSafetyNumberForNumber(
-            String ownNumber, IdentityKey ownIdentityKey, String theirNumber, IdentityKey theirIdentityKey
+            String ownNumber,
+            IdentityKey ownIdentityKey,
+            String theirNumber,
+            IdentityKey theirIdentityKey
     ) {
         // Version 1: E164 user
         final var version = 1;
@@ -70,7 +83,10 @@ public class Utils {
     }
 
     public static Fingerprint computeSafetyNumberForUuid(
-            ServiceId ownServiceId, IdentityKey ownIdentityKey, ServiceId theirServiceId, IdentityKey theirIdentityKey
+            ServiceId ownServiceId,
+            IdentityKey ownIdentityKey,
+            ServiceId theirServiceId,
+            IdentityKey theirIdentityKey
     ) {
         // Version 2: UUID user
         final var version = 2;
@@ -132,7 +148,7 @@ public class Utils {
         var params = query.split("&");
         var map = new HashMap<String, String>();
         for (var param : params) {
-            final var paramParts = param.split("=");
+            final var paramParts = param.split("=", 2);
             var name = URLDecoder.decode(paramParts[0], StandardCharsets.UTF_8);
             var value = paramParts.length == 1 ? null : URLDecoder.decode(paramParts[1], StandardCharsets.UTF_8);
             map.put(name, value);
@@ -141,14 +157,82 @@ public class Utils {
     }
 
     public static <T> T handleResponseException(final NetworkResult<T> response) throws IOException {
-        final var throwableOptional = response.getCause();
-        if (throwableOptional != null) {
-            if (throwableOptional instanceof IOException ioException) {
-                throw ioException;
-            } else {
-                throw new IOException(throwableOptional);
+        return NetworkResultUtil.toBasicLegacy(response);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T, E extends BadRequestError> T handleResponseException(final RequestResult<T, E> result) throws IOException {
+        if (result instanceof RequestResult.Success<?> success) {
+            return ((RequestResult.Success<T>) success).getResult();
+        } else if (result instanceof RequestResult.ApplicationError e) {
+            final var cause = e.getCause();
+            switch (cause) {
+                case IOException io -> throw io;
+                case RuntimeException rt -> throw rt;
+                default -> throw new RuntimeException(cause);
+            }
+        } else if (result instanceof RequestResult.RetryableNetworkError e) {
+            throw e.getNetworkError();
+        } else if (result instanceof RequestResult.NonSuccess) {
+            throw new AssertionError();
+        }
+        throw new IllegalStateException("Unexpected value: " + result);
+    }
+
+    public static ByteString firstNonEmpty(ByteString... strings) {
+        for (final var s : strings) {
+            if (s.size() > 0) {
+                return s;
             }
         }
-        return response.successOrThrow();
+        return ByteString.EMPTY;
+    }
+
+    @SafeVarargs
+    public static <T> List<T> firstNonEmpty(List<T>... values) {
+        for (final var s : values) {
+            if (!s.isEmpty()) {
+                return s;
+            }
+        }
+        return List.of();
+    }
+
+    public static String firstNonEmpty(String... strings) {
+        for (final var s : strings) {
+            if (!s.isEmpty()) {
+                return s;
+            }
+        }
+        return "";
+    }
+
+    @SafeVarargs
+    public static <T> T firstNonNull(T... values) {
+        for (final var v : values) {
+            if (v != null) {
+                return v;
+            }
+        }
+        return null;
+    }
+
+    public static String nullIfEmpty(String string) {
+        return string == null || string.isEmpty() ? null : string;
+    }
+
+    public static Proxy getHttpsProxy() {
+        final URI uri;
+        try {
+            uri = new URI("https://example");
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+        final var proxies = ProxySelector.getDefault().select(uri);
+        if (proxies.isEmpty()) {
+            return Proxy.NO_PROXY;
+        } else {
+            return proxies.getFirst();
+        }
     }
 }

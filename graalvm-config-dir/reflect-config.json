@@ -40,7 +40,22 @@
   "name":"[Ljava.sql.Statement;"
 },
 {
+  "name":"[Lorg.asamk.signal.commands.ListStickerPacksCommand$JsonStickerPack$JsonSticker;"
+},
+{
   "name":"[Lorg.asamk.signal.json.JsonAttachment;"
+},
+{
+  "name":"[Lorg.asamk.signal.json.JsonCallMessage$IceUpdate;"
+},
+{
+  "name":"[Lorg.asamk.signal.json.JsonContactAddress;"
+},
+{
+  "name":"[Lorg.asamk.signal.json.JsonContactEmail;"
+},
+{
+  "name":"[Lorg.asamk.signal.json.JsonContactPhone;"
 },
 {
   "name":"[Lorg.asamk.signal.json.JsonMention;"
@@ -52,6 +67,9 @@
   "name":"[Lorg.asamk.signal.json.JsonQuotedAttachment;"
 },
 {
+  "name":"[Lorg.asamk.signal.json.JsonSharedContact;"
+},
+{
   "name":"[Lorg.asamk.signal.json.JsonSyncReadMessage;"
 },
 {
@@ -59,6 +77,9 @@
 },
 {
   "name":"[Lorg.asamk.signal.manager.storage.accounts.AccountsStorage$Account;"
+},
+{
+  "name":"[Lorg.asamk.signal.manager.storage.stickerPacks.JsonStickerPack$JsonSticker;"
 },
 {
   "name":"[Lorg.whispersystems.signalservice.api.groupsv2.TemporalCredential;"
@@ -125,6 +146,13 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
+  "name":"com.squareup.wire.Message",
+  "methods":[{"name":"adapter","parameterTypes":[] }, {"name":"unknownFields","parameterTypes":[] }]
+},
+{
+  "name":"com.squareup.wire.ProtoAdapter"
+},
+{
   "name":"com.squareup.wire.internal.ImmutableList",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
@@ -182,7 +210,7 @@
   "name":"com.zaxxer.hikari.HikariConfig",
   "allDeclaredFields":true,
   "queryAllPublicMethods":true,
-  "methods":[{"name":"getAllowPoolSuspension","parameterTypes":[] }, {"name":"getAutoCommit","parameterTypes":[] }, {"name":"getCatalog","parameterTypes":[] }, {"name":"getConnectionInitSql","parameterTypes":[] }, {"name":"getConnectionTestQuery","parameterTypes":[] }, {"name":"getConnectionTimeout","parameterTypes":[] }, {"name":"getCredentials","parameterTypes":[] }, {"name":"getDataSource","parameterTypes":[] }, {"name":"getDataSourceClassName","parameterTypes":[] }, {"name":"getDataSourceJNDI","parameterTypes":[] }, {"name":"getDataSourceProperties","parameterTypes":[] }, {"name":"getDriverClassName","parameterTypes":[] }, {"name":"getExceptionOverride","parameterTypes":[] }, {"name":"getExceptionOverrideClassName","parameterTypes":[] }, {"name":"getHealthCheckProperties","parameterTypes":[] }, {"name":"getHealthCheckRegistry","parameterTypes":[] }, {"name":"getIdleTimeout","parameterTypes":[] }, {"name":"getInitializationFailTimeout","parameterTypes":[] }, {"name":"getIsolateInternalQueries","parameterTypes":[] }, {"name":"getJdbcUrl","parameterTypes":[] }, {"name":"getKeepaliveTime","parameterTypes":[] }, {"name":"getLeakDetectionThreshold","parameterTypes":[] }, {"name":"getMaxLifetime","parameterTypes":[] }, {"name":"getMaximumPoolSize","parameterTypes":[] }, {"name":"getMetricRegistry","parameterTypes":[] }, {"name":"getMetricsTrackerFactory","parameterTypes":[] }, {"name":"getMinimumIdle","parameterTypes":[] }, {"name":"getPassword","parameterTypes":[] }, {"name":"getPoolName","parameterTypes":[] }, {"name":"getReadOnly","parameterTypes":[] }, {"name":"getRegisterMbeans","parameterTypes":[] }, {"name":"getScheduledExecutor","parameterTypes":[] }, {"name":"getSchema","parameterTypes":[] }, {"name":"getThreadFactory","parameterTypes":[] }, {"name":"getTransactionIsolation","parameterTypes":[] }, {"name":"getUsername","parameterTypes":[] }, {"name":"getValidationTimeout","parameterTypes":[] }, {"name":"isAllowPoolSuspension","parameterTypes":[] }, {"name":"isAutoCommit","parameterTypes":[] }, {"name":"isIsolateInternalQueries","parameterTypes":[] }, {"name":"isReadOnly","parameterTypes":[] }, {"name":"isRegisterMbeans","parameterTypes":[] }, {"name":"setAllowPoolSuspension","parameterTypes":["boolean"] }, {"name":"setAutoCommit","parameterTypes":["boolean"] }, {"name":"setCatalog","parameterTypes":["java.lang.String"] }, {"name":"setClass","parameterTypes":["java.lang.Class"] }, {"name":"setConnectionInitSql","parameterTypes":["java.lang.String"] }, {"name":"setConnectionTestQuery","parameterTypes":["java.lang.String"] }, {"name":"setConnectionTimeout","parameterTypes":["long"] }, {"name":"setCredentials","parameterTypes":["com.zaxxer.hikari.util.Credentials"] }, {"name":"setDataSource","parameterTypes":["javax.sql.DataSource"] }, {"name":"setDataSourceClassName","parameterTypes":["java.lang.String"] }, {"name":"setDataSourceJNDI","parameterTypes":["java.lang.String"] }, {"name":"setDataSourceProperties","parameterTypes":["java.util.Properties"] }, {"name":"setDriverClassName","parameterTypes":["java.lang.String"] }, {"name":"setExceptionOverride","parameterTypes":["com.zaxxer.hikari.SQLExceptionOverride"] }, {"name":"setExceptionOverrideClassName","parameterTypes":["java.lang.String"] }, {"name":"setHealthCheckProperties","parameterTypes":["java.util.Properties"] }, {"name":"setHealthCheckRegistry","parameterTypes":["java.lang.Object"] }, {"name":"setIdleTimeout","parameterTypes":["long"] }, {"name":"setInitializationFailTimeout","parameterTypes":["long"] }, {"name":"setIsolateInternalQueries","parameterTypes":["boolean"] }, {"name":"setJdbcUrl","parameterTypes":["java.lang.String"] }, {"name":"setKeepaliveTime","parameterTypes":["long"] }, {"name":"setLeakDetectionThreshold","parameterTypes":["long"] }, {"name":"setMaxLifetime","parameterTypes":["long"] }, {"name":"setMaximumPoolSize","parameterTypes":["int"] }, {"name":"setMetricRegistry","parameterTypes":["java.lang.Object"] }, {"name":"setMetricsTrackerFactory","parameterTypes":["com.zaxxer.hikari.metrics.MetricsTrackerFactory"] }, {"name":"setMinimumIdle","parameterTypes":["int"] }, {"name":"setPassword","parameterTypes":["java.lang.String"] }, {"name":"setPoolName","parameterTypes":["java.lang.String"] }, {"name":"setReadOnly","parameterTypes":["boolean"] }, {"name":"setRegisterMbeans","parameterTypes":["boolean"] }, {"name":"setScheduledExecutor","parameterTypes":["java.util.concurrent.ScheduledExecutorService"] }, {"name":"setSchema","parameterTypes":["java.lang.String"] }, {"name":"setThreadFactory","parameterTypes":["java.util.concurrent.ThreadFactory"] }, {"name":"setTransactionIsolation","parameterTypes":["java.lang.String"] }, {"name":"setUsername","parameterTypes":["java.lang.String"] }, {"name":"setValidationTimeout","parameterTypes":["long"] }]
+  "methods":[{"name":"getAllowPoolSuspension","parameterTypes":[] }, {"name":"getAutoCommit","parameterTypes":[] }, {"name":"getCatalog","parameterTypes":[] }, {"name":"getConnectionInitSql","parameterTypes":[] }, {"name":"getConnectionTestQuery","parameterTypes":[] }, {"name":"getConnectionTimeout","parameterTypes":[] }, {"name":"getCredentials","parameterTypes":[] }, {"name":"getCredentialsProvider","parameterTypes":[] }, {"name":"getCredentialsProviderClassName","parameterTypes":[] }, {"name":"getDataSource","parameterTypes":[] }, {"name":"getDataSourceClassName","parameterTypes":[] }, {"name":"getDataSourceJNDI","parameterTypes":[] }, {"name":"getDataSourceProperties","parameterTypes":[] }, {"name":"getDriverClassName","parameterTypes":[] }, {"name":"getExceptionOverride","parameterTypes":[] }, {"name":"getExceptionOverrideClassName","parameterTypes":[] }, {"name":"getHealthCheckProperties","parameterTypes":[] }, {"name":"getHealthCheckRegistry","parameterTypes":[] }, {"name":"getIdleTimeout","parameterTypes":[] }, {"name":"getInitializationFailTimeout","parameterTypes":[] }, {"name":"getIsolateInternalQueries","parameterTypes":[] }, {"name":"getJdbcUrl","parameterTypes":[] }, {"name":"getKeepaliveTime","parameterTypes":[] }, {"name":"getLeakDetectionThreshold","parameterTypes":[] }, {"name":"getMaxLifetime","parameterTypes":[] }, {"name":"getMaximumPoolSize","parameterTypes":[] }, {"name":"getMetricRegistry","parameterTypes":[] }, {"name":"getMetricsTrackerFactory","parameterTypes":[] }, {"name":"getMinimumIdle","parameterTypes":[] }, {"name":"getPassword","parameterTypes":[] }, {"name":"getPoolName","parameterTypes":[] }, {"name":"getReadOnly","parameterTypes":[] }, {"name":"getRegisterMbeans","parameterTypes":[] }, {"name":"getScheduledExecutor","parameterTypes":[] }, {"name":"getSchema","parameterTypes":[] }, {"name":"getThreadFactory","parameterTypes":[] }, {"name":"getTransactionIsolation","parameterTypes":[] }, {"name":"getUsername","parameterTypes":[] }, {"name":"getValidationTimeout","parameterTypes":[] }, {"name":"isAllowPoolSuspension","parameterTypes":[] }, {"name":"isAutoCommit","parameterTypes":[] }, {"name":"isIsolateInternalQueries","parameterTypes":[] }, {"name":"isReadOnly","parameterTypes":[] }, {"name":"isRegisterMbeans","parameterTypes":[] }, {"name":"setAllowPoolSuspension","parameterTypes":["boolean"] }, {"name":"setAutoCommit","parameterTypes":["boolean"] }, {"name":"setCatalog","parameterTypes":["java.lang.String"] }, {"name":"setClass","parameterTypes":["java.lang.Class"] }, {"name":"setConnectionInitSql","parameterTypes":["java.lang.String"] }, {"name":"setConnectionTestQuery","parameterTypes":["java.lang.String"] }, {"name":"setConnectionTimeout","parameterTypes":["long"] }, {"name":"setCredentials","parameterTypes":["com.zaxxer.hikari.util.Credentials"] }, {"name":"setCredentialsProvider","parameterTypes":["com.zaxxer.hikari.HikariCredentialsProvider"] }, {"name":"setCredentialsProviderClassName","parameterTypes":["java.lang.String"] }, {"name":"setDataSource","parameterTypes":["javax.sql.DataSource"] }, {"name":"setDataSourceClassName","parameterTypes":["java.lang.String"] }, {"name":"setDataSourceJNDI","parameterTypes":["java.lang.String"] }, {"name":"setDataSourceProperties","parameterTypes":["java.util.Properties"] }, {"name":"setDriverClassName","parameterTypes":["java.lang.String"] }, {"name":"setExceptionOverride","parameterTypes":["com.zaxxer.hikari.SQLExceptionOverride"] }, {"name":"setExceptionOverrideClassName","parameterTypes":["java.lang.String"] }, {"name":"setHealthCheckProperties","parameterTypes":["java.util.Properties"] }, {"name":"setHealthCheckRegistry","parameterTypes":["java.lang.Object"] }, {"name":"setIdleTimeout","parameterTypes":["long"] }, {"name":"setInitializationFailTimeout","parameterTypes":["long"] }, {"name":"setIsolateInternalQueries","parameterTypes":["boolean"] }, {"name":"setJdbcUrl","parameterTypes":["java.lang.String"] }, {"name":"setKeepaliveTime","parameterTypes":["long"] }, {"name":"setLeakDetectionThreshold","parameterTypes":["long"] }, {"name":"setMaxLifetime","parameterTypes":["long"] }, {"name":"setMaximumPoolSize","parameterTypes":["int"] }, {"name":"setMetricRegistry","parameterTypes":["java.lang.Object"] }, {"name":"setMetricsTrackerFactory","parameterTypes":["com.zaxxer.hikari.metrics.MetricsTrackerFactory"] }, {"name":"setMinimumIdle","parameterTypes":["int"] }, {"name":"setPassword","parameterTypes":["java.lang.String"] }, {"name":"setPoolName","parameterTypes":["java.lang.String"] }, {"name":"setReadOnly","parameterTypes":["boolean"] }, {"name":"setRegisterMbeans","parameterTypes":["boolean"] }, {"name":"setScheduledExecutor","parameterTypes":["java.util.concurrent.ScheduledExecutorService"] }, {"name":"setSchema","parameterTypes":["java.lang.String"] }, {"name":"setThreadFactory","parameterTypes":["java.util.concurrent.ThreadFactory"] }, {"name":"setTransactionIsolation","parameterTypes":["java.lang.String"] }, {"name":"setUsername","parameterTypes":["java.lang.String"] }, {"name":"setValidationTimeout","parameterTypes":["long"] }]
 },
 {
   "name":"com.zaxxer.hikari.pool.PoolBase",
@@ -210,8 +238,13 @@
   "name":"java.io.FilePermission"
 },
 {
+  "name":"java.io.OutputStream"
+},
+{
   "name":"java.io.Serializable",
-  "allDeclaredMethods":true
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredClasses":true
 },
 {
   "name":"java.lang.Boolean",
@@ -262,6 +295,11 @@
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
   "methods":[{"name":"valueOf","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"java.lang.NullPointerException",
+  "queryAllPublicConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"java.lang.Number",
@@ -427,6 +465,12 @@
   "queryAllDeclaredMethods":true
 },
 {
+  "name":"java.util.ImmutableCollections$List12",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
   "name":"java.util.ImmutableCollections$ListN",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
@@ -578,6 +622,9 @@
   "name":"kotlin.String"
 },
 {
+  "name":"kotlin.Unit"
+},
+{
   "name":"kotlin.collections.AbstractCollection",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true
@@ -619,6 +666,46 @@
   "allPublicFields":true
 },
 {
+  "name":"kotlinx.coroutines.CancellableContinuationImpl",
+  "fields":[{"name":"_decisionAndIndex$volatile"}, {"name":"_parentHandle$volatile"}, {"name":"_state$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.CompletedExceptionally",
+  "fields":[{"name":"_handled$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.EventLoopImplBase",
+  "fields":[{"name":"_delayed$volatile"}, {"name":"_isCompleted$volatile"}, {"name":"_queue$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.JobSupport",
+  "fields":[{"name":"_parentHandle$volatile"}, {"name":"_state$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.JobSupport$Finishing",
+  "fields":[{"name":"_exceptionsHolder$volatile"}, {"name":"_isCompleting$volatile"}, {"name":"_rootCause$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.internal.DispatchedContinuation",
+  "fields":[{"name":"_reusableCancellableContinuation$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.internal.LockFreeLinkedListNode",
+  "fields":[{"name":"_next$volatile"}, {"name":"_prev$volatile"}, {"name":"_removedRef$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.internal.LockFreeTaskQueue",
+  "fields":[{"name":"_cur$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.internal.LockFreeTaskQueueCore",
+  "fields":[{"name":"_next$volatile"}, {"name":"_state$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.scheduling.CoroutineScheduler",
+  "fields":[{"name":"_isTerminated$volatile"}, {"name":"controlState$volatile"}, {"name":"parkedWorkersStack$volatile"}]
+},
+{
   "name":"libcore.io.Memory"
 },
 {
@@ -628,6 +715,13 @@
 },
 {
   "name":"long[]"
+},
+{
+  "name":"okhttp3.internal.connection.RealConnectionPool",
+  "fields":[{"name":"addressStates"}]
+},
+{
+  "name":"okio.BufferedSink"
 },
 {
   "name":"okio.ByteString"
@@ -836,7 +930,7 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.String"] }, {"name":"captcha","parameterTypes":[] }, {"name":"voice","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.String"] }, {"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.String","java.lang.Boolean"] }, {"name":"captcha","parameterTypes":[] }, {"name":"voice","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.commands.StartLinkCommand$JsonLink",
@@ -990,7 +1084,7 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
-  "methods":[{"name":"display","parameterTypes":[] }, {"name":"family","parameterTypes":[] }, {"name":"given","parameterTypes":[] }, {"name":"middle","parameterTypes":[] }, {"name":"prefix","parameterTypes":[] }, {"name":"suffix","parameterTypes":[] }]
+  "methods":[{"name":"display","parameterTypes":[] }, {"name":"family","parameterTypes":[] }, {"name":"given","parameterTypes":[] }, {"name":"middle","parameterTypes":[] }, {"name":"nickname","parameterTypes":[] }, {"name":"prefix","parameterTypes":[] }, {"name":"suffix","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.json.JsonContactPhone",
@@ -1004,7 +1098,7 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
-  "methods":[{"name":"attachments","parameterTypes":[] }, {"name":"contacts","parameterTypes":[] }, {"name":"expiresInSeconds","parameterTypes":[] }, {"name":"groupInfo","parameterTypes":[] }, {"name":"mentions","parameterTypes":[] }, {"name":"message","parameterTypes":[] }, {"name":"payment","parameterTypes":[] }, {"name":"previews","parameterTypes":[] }, {"name":"quote","parameterTypes":[] }, {"name":"reaction","parameterTypes":[] }, {"name":"remoteDelete","parameterTypes":[] }, {"name":"sticker","parameterTypes":[] }, {"name":"storyContext","parameterTypes":[] }, {"name":"textStyles","parameterTypes":[] }, {"name":"timestamp","parameterTypes":[] }, {"name":"viewOnce","parameterTypes":[] }]
+  "methods":[{"name":"attachments","parameterTypes":[] }, {"name":"contacts","parameterTypes":[] }, {"name":"expiresInSeconds","parameterTypes":[] }, {"name":"groupInfo","parameterTypes":[] }, {"name":"isExpirationUpdate","parameterTypes":[] }, {"name":"mentions","parameterTypes":[] }, {"name":"message","parameterTypes":[] }, {"name":"payment","parameterTypes":[] }, {"name":"pollCreate","parameterTypes":[] }, {"name":"pollTerminate","parameterTypes":[] }, {"name":"pollVote","parameterTypes":[] }, {"name":"previews","parameterTypes":[] }, {"name":"quote","parameterTypes":[] }, {"name":"reaction","parameterTypes":[] }, {"name":"remoteDelete","parameterTypes":[] }, {"name":"sticker","parameterTypes":[] }, {"name":"storyContext","parameterTypes":[] }, {"name":"textStyles","parameterTypes":[] }, {"name":"timestamp","parameterTypes":[] }, {"name":"viewOnce","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.json.JsonEditMessage",
@@ -1025,7 +1119,7 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
-  "methods":[{"name":"groupId","parameterTypes":[] }, {"name":"type","parameterTypes":[] }]
+  "methods":[{"name":"groupId","parameterTypes":[] }, {"name":"groupName","parameterTypes":[] }, {"name":"revision","parameterTypes":[] }, {"name":"type","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.json.JsonMention",
@@ -1047,6 +1141,27 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"note","parameterTypes":[] }, {"name":"receipt","parameterTypes":[] }]
+},
+{
+  "name":"org.asamk.signal.json.JsonPollCreate",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"allowMultiple","parameterTypes":[] }, {"name":"options","parameterTypes":[] }, {"name":"question","parameterTypes":[] }]
+},
+{
+  "name":"org.asamk.signal.json.JsonPollTerminate",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"targetSentTimestamp","parameterTypes":[] }]
+},
+{
+  "name":"org.asamk.signal.json.JsonPollVote",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"author","parameterTypes":[] }, {"name":"authorNumber","parameterTypes":[] }, {"name":"authorUuid","parameterTypes":[] }, {"name":"optionIndexes","parameterTypes":[] }, {"name":"targetSentTimestamp","parameterTypes":[] }, {"name":"voteCount","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.json.JsonPreview",
@@ -1088,7 +1203,7 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"number","parameterTypes":[] }, {"name":"uuid","parameterTypes":[] }]
+  "methods":[{"name":"number","parameterTypes":[] }, {"name":"username","parameterTypes":[] }, {"name":"uuid","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.json.JsonRemoteDelete",
@@ -1247,7 +1362,7 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["int","long","java.lang.String","boolean","java.lang.String","java.lang.String","java.lang.String","int","boolean","java.lang.String","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String"] }, {"name":"<init>","parameterTypes":["int","java.lang.String","boolean","java.lang.String","java.lang.String","java.lang.String","int","boolean","java.lang.String","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","java.lang.String","java.lang.String","java.lang.String","java.lang.String"] }, {"name":"<init>","parameterTypes":["int","java.lang.String","boolean","java.lang.String","java.lang.String","java.lang.String","int","boolean","java.lang.String","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String"] }, {"name":"aciAccountData","parameterTypes":[] }, {"name":"deviceId","parameterTypes":[] }, {"name":"encryptedDeviceName","parameterTypes":[] }, {"name":"isMultiDevice","parameterTypes":[] }, {"name":"number","parameterTypes":[] }, {"name":"password","parameterTypes":[] }, {"name":"pinMasterKey","parameterTypes":[] }, {"name":"pniAccountData","parameterTypes":[] }, {"name":"profileKey","parameterTypes":[] }, {"name":"registered","parameterTypes":[] }, {"name":"registrationLockPin","parameterTypes":[] }, {"name":"serviceEnvironment","parameterTypes":[] }, {"name":"storageKey","parameterTypes":[] }, {"name":"timestamp","parameterTypes":[] }, {"name":"username","parameterTypes":[] }, {"name":"usernameLinkEntropy","parameterTypes":[] }, {"name":"usernameLinkServerId","parameterTypes":[] }, {"name":"version","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":["int","long","java.lang.String","boolean","java.lang.String","java.lang.String","java.lang.String","int","boolean","java.lang.String","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String"] }, {"name":"<init>","parameterTypes":["int","long","java.lang.String","boolean","java.lang.String","java.lang.String","java.lang.String","int","boolean","java.lang.String","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String"] }, {"name":"<init>","parameterTypes":["int","java.lang.String","boolean","java.lang.String","java.lang.String","java.lang.String","int","boolean","java.lang.String","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","java.lang.String","java.lang.String","java.lang.String","java.lang.String"] }, {"name":"<init>","parameterTypes":["int","java.lang.String","boolean","java.lang.String","java.lang.String","java.lang.String","int","boolean","java.lang.String","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String"] }, {"name":"accountEntropyPool","parameterTypes":[] }, {"name":"aciAccountData","parameterTypes":[] }, {"name":"deviceId","parameterTypes":[] }, {"name":"encryptedDeviceName","parameterTypes":[] }, {"name":"isMultiDevice","parameterTypes":[] }, {"name":"mediaRootBackupKey","parameterTypes":[] }, {"name":"number","parameterTypes":[] }, {"name":"password","parameterTypes":[] }, {"name":"pinMasterKey","parameterTypes":[] }, {"name":"pniAccountData","parameterTypes":[] }, {"name":"profileKey","parameterTypes":[] }, {"name":"registered","parameterTypes":[] }, {"name":"registrationLockPin","parameterTypes":[] }, {"name":"serviceEnvironment","parameterTypes":[] }, {"name":"storageKey","parameterTypes":[] }, {"name":"timestamp","parameterTypes":[] }, {"name":"username","parameterTypes":[] }, {"name":"usernameLinkEntropy","parameterTypes":[] }, {"name":"usernameLinkServerId","parameterTypes":[] }, {"name":"version","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData",
@@ -1363,6 +1478,12 @@
 {
   "name":"org.asamk.signal.manager.storage.profiles.LegacyProfileStore$ProfileStoreDeserializer",
   "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.asamk.signal.manager.storage.profiles.LegacySignalProfile",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
 },
 {
   "name":"org.asamk.signal.manager.storage.profiles.LegacySignalProfileEntry",
@@ -1500,6 +1621,10 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
+  "name":"org.bouncycastle.jcajce.provider.asymmetric.CONTEXT$Mappings",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
   "name":"org.bouncycastle.jcajce.provider.asymmetric.CompositeSignatures$Mappings",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
@@ -1560,11 +1685,27 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
+  "name":"org.bouncycastle.jcajce.provider.asymmetric.MLDSA$Mappings",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.bouncycastle.jcajce.provider.asymmetric.MLKEM$Mappings",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
   "name":"org.bouncycastle.jcajce.provider.asymmetric.NTRU$Mappings",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
+  "name":"org.bouncycastle.jcajce.provider.asymmetric.NoSig$Mappings",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
   "name":"org.bouncycastle.jcajce.provider.asymmetric.RSA$Mappings",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.bouncycastle.jcajce.provider.asymmetric.SLHDSA$Mappings",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
@@ -1979,7 +2120,10 @@
   "name":"org.signal.libsignal.protocol.IdentityKey"
 },
 {
-  "name":"org.signal.libsignal.protocol.ServiceId"
+  "name":"org.signal.libsignal.protocol.ServiceId",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
 },
 {
   "name":"org.signal.libsignal.protocol.SignalProtocolAddress"
@@ -2241,7 +2385,7 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
-  "methods":[{"name":"getAnnouncementGroup","parameterTypes":[] }, {"name":"getChangeNumber","parameterTypes":[] }, {"name":"getDeleteSync","parameterTypes":[] }, {"name":"getGiftBadges","parameterTypes":[] }, {"name":"getPaymentActivation","parameterTypes":[] }, {"name":"getPni","parameterTypes":[] }, {"name":"getSenderKey","parameterTypes":[] }, {"name":"getStorage","parameterTypes":[] }, {"name":"getStories","parameterTypes":[] }, {"name":"getVersionedExpirationTimer","parameterTypes":[] }]
+  "methods":[{"name":"getAnnouncementGroup","parameterTypes":[] }, {"name":"getAttachmentBackfill","parameterTypes":[] }, {"name":"getChangeNumber","parameterTypes":[] }, {"name":"getDeleteSync","parameterTypes":[] }, {"name":"getGiftBadges","parameterTypes":[] }, {"name":"getPaymentActivation","parameterTypes":[] }, {"name":"getPni","parameterTypes":[] }, {"name":"getSenderKey","parameterTypes":[] }, {"name":"getSpqr","parameterTypes":[] }, {"name":"getStorage","parameterTypes":[] }, {"name":"getStorageServiceEncryptionV2","parameterTypes":[] }, {"name":"getStories","parameterTypes":[] }, {"name":"getVersionedExpirationTimer","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.api.account.ChangePhoneNumberRequest",
@@ -2267,6 +2411,20 @@
 },
 {
   "name":"org.whispersystems.signalservice.api.groupsv2.TemporalCredential[]"
+},
+{
+  "name":"org.whispersystems.signalservice.api.keys.OneTimePreKeyCounts",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.signalservice.api.link.LinkedDeviceVerificationCodeResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String"] }, {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","int","kotlin.jvm.internal.DefaultConstructorMarker"] }]
 },
 {
   "name":"org.whispersystems.signalservice.api.messages.calls.HangupMessage",
@@ -2328,7 +2486,14 @@
   "name":"org.whispersystems.signalservice.api.profiles.SignalServiceProfileWrite",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","byte[]","byte[]","byte[]","byte[]","byte[]","boolean","boolean","byte[]","java.util.List"] }, {"name":"getAbout","parameterTypes":[] }, {"name":"getAboutEmoji","parameterTypes":[] }, {"name":"getAvatar","parameterTypes":[] }, {"name":"getBadgeIds","parameterTypes":[] }, {"name":"getCommitment","parameterTypes":[] }, {"name":"getName","parameterTypes":[] }, {"name":"getPaymentAddress","parameterTypes":[] }, {"name":"getPhoneNumberSharing","parameterTypes":[] }, {"name":"getSameAvatar","parameterTypes":[] }, {"name":"getVersion","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.signalservice.api.provisioning.ProvisioningMessage",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
 },
 {
   "name":"org.whispersystems.signalservice.api.push.ServiceId",
@@ -2372,6 +2537,12 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String"] }]
+},
+{
+  "name":"org.whispersystems.signalservice.api.ratelimit.SubmitRecaptchaChallengePayload",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
 },
 {
   "name":"org.whispersystems.signalservice.api.storage.StorageAuthResponse",
@@ -2851,7 +3022,28 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","java.lang.String","org.whispersystems.signalservice.internal.push.WhoAmIResponse$Entitlements"] }, {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","java.lang.String","org.whispersystems.signalservice.internal.push.WhoAmIResponse$Entitlements","int","kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.WhoAmIResponse$BackupEntitlement",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.Long","java.lang.Long"] }]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.WhoAmIResponse$BadgeEntitlement",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.Boolean","java.lang.Long"] }, {"name":"<init>","parameterTypes":["java.lang.String","java.lang.Boolean","java.lang.Long","int","kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.WhoAmIResponse$Entitlements",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.util.List","org.whispersystems.signalservice.internal.push.WhoAmIResponse$BackupEntitlement"] }, {"name":"<init>","parameterTypes":["java.util.List","org.whispersystems.signalservice.internal.push.WhoAmIResponse$BackupEntitlement","int","kotlin.jvm.internal.DefaultConstructorMarker"] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.serialize.protos.AddressProto",
@@ -2875,7 +3067,26 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.AccountRecord",
-  "allDeclaredFields":true
+  "allDeclaredFields":true,
+  "methods":[{"name":"adapter","parameterTypes":[] }, {"name":"unknownFields","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.AccountRecord$BackupTierHistory"
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.AccountRecord$Builder"
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.AccountRecord$Companion"
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.AccountRecord$IAPSubscriberData"
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.AccountRecord$NotificationProfileManualOverride"
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.AccountRecord$PhoneNumberSharingMode"
 },
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.AccountRecord$PinnedConversation",
@@ -2890,8 +3101,21 @@
   "allDeclaredFields":true
 },
 {
+  "name":"org.whispersystems.signalservice.internal.storage.protos.AvatarColor"
+},
+{
   "name":"org.whispersystems.signalservice.internal.storage.protos.ContactRecord",
-  "allDeclaredFields":true
+  "allDeclaredFields":true,
+  "methods":[{"name":"adapter","parameterTypes":[] }, {"name":"unknownFields","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.ContactRecord$Builder"
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.ContactRecord$Companion"
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.ContactRecord$IdentityState"
 },
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.ContactRecord$Name",
@@ -2899,11 +3123,30 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.GroupV1Record",
-  "allDeclaredFields":true
+  "allDeclaredFields":true,
+  "fields":[{"name":"archived"}, {"name":"blocked"}, {"name":"id"}, {"name":"markedUnread"}, {"name":"mutedUntilTimestamp"}, {"name":"whitelisted"}],
+  "methods":[{"name":"adapter","parameterTypes":[] }, {"name":"unknownFields","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.GroupV1Record$Builder"
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.GroupV1Record$Companion"
 },
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.GroupV2Record",
-  "allDeclaredFields":true
+  "allDeclaredFields":true,
+  "fields":[{"name":"archived"}, {"name":"avatarColor"}, {"name":"blocked"}, {"name":"dontNotifyForMentionsIfMuted"}, {"name":"hideStory"}, {"name":"markedUnread"}, {"name":"masterKey"}, {"name":"mutedUntilTimestamp"}, {"name":"storySendMode"}, {"name":"whitelisted"}],
+  "methods":[{"name":"adapter","parameterTypes":[] }, {"name":"unknownFields","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.GroupV2Record$Builder"
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.GroupV2Record$Companion"
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.GroupV2Record$StorySendMode"
 },
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.ManifestRecord",
@@ -2912,6 +3155,9 @@
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.ManifestRecord$Identifier",
   "fields":[{"name":"raw_"}, {"name":"type_"}]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.OptionalBool"
 },
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.Payments",

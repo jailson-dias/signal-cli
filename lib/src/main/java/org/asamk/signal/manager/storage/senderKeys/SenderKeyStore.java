@@ -2,11 +2,11 @@ package org.asamk.signal.manager.storage.senderKeys;
 
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.storage.Database;
+import org.signal.core.models.ServiceId;
 import org.signal.libsignal.protocol.SignalProtocolAddress;
 import org.signal.libsignal.protocol.groups.state.SenderKeyRecord;
 import org.whispersystems.signalservice.api.SignalServiceSenderKeyStore;
 import org.whispersystems.signalservice.api.push.DistributionId;
-import org.whispersystems.signalservice.api.push.ServiceId;
 
 import java.util.Collection;
 import java.util.Map;
@@ -25,7 +25,9 @@ public class SenderKeyStore implements SignalServiceSenderKeyStore {
 
     @Override
     public void storeSenderKey(
-            final SignalProtocolAddress sender, final UUID distributionId, final SenderKeyRecord record
+            final SignalProtocolAddress sender,
+            final UUID distributionId,
+            final SenderKeyRecord record
     ) {
         senderKeyRecordStore.storeSenderKey(sender, distributionId, record);
     }
@@ -42,7 +44,8 @@ public class SenderKeyStore implements SignalServiceSenderKeyStore {
 
     @Override
     public void markSenderKeySharedWith(
-            final DistributionId distributionId, final Collection<SignalProtocolAddress> addresses
+            final DistributionId distributionId,
+            final Collection<SignalProtocolAddress> addresses
     ) {
         senderKeySharedStore.markSenderKeySharedWith(distributionId, addresses);
     }

@@ -11,17 +11,19 @@ import org.signal.libsignal.protocol.state.PreKeyRecord;
 import org.signal.libsignal.protocol.state.SignedPreKeyRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.NetworkResultUtil;
 import org.whispersystems.signalservice.api.account.PreKeyUpload;
+import org.whispersystems.signalservice.api.keys.OneTimePreKeyCounts;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
 import org.whispersystems.signalservice.api.push.exceptions.NonSuccessfulResponseCodeException;
-import org.whispersystems.signalservice.internal.push.OneTimePreKeyCounts;
 
 import java.io.IOException;
 import java.util.List;
 
 import static org.asamk.signal.manager.config.ServiceConfig.PREKEY_STALE_AGE;
 import static org.asamk.signal.manager.config.ServiceConfig.SIGNED_PREKEY_ROTATE_AGE;
+import static org.asamk.signal.manager.util.Utils.handleResponseException;
 
 public class PreKeyHelper {
 
@@ -30,9 +32,7 @@ public class PreKeyHelper {
     private final SignalAccount account;
     private final SignalDependencies dependencies;
 
-    public PreKeyHelper(
-            final SignalAccount account, final SignalDependencies dependencies
-    ) {
+    public PreKeyHelper(final SignalAccount account, final SignalDependencies dependencies) {
         this.account = account;
         this.dependencies = dependencies;
     }
@@ -79,11 +79,12 @@ public class PreKeyHelper {
     }
 
     private boolean refreshPreKeysIfNecessary(
-            final ServiceIdType serviceIdType, final IdentityKeyPair identityKeyPair
+            final ServiceIdType serviceIdType,
+            final IdentityKeyPair identityKeyPair
     ) throws IOException {
         OneTimePreKeyCounts preKeyCounts;
         try {
-            preKeyCounts = dependencies.getAccountManager().getPreKeyCounts(serviceIdType);
+            preKeyCounts = handleResponseException(dependencies.getKeysApi().getAvailablePreKeyCounts(serviceIdType));
         } catch (AuthorizationFailedException e) {
             logger.debug("Failed to get pre key count, ignoring: " + e.getClass().getSimpleName());
             preKeyCounts = new OneTimePreKeyCounts(0, 0);
@@ -144,7 +145,7 @@ public class PreKeyHelper {
                 kyberPreKeyRecords);
         var needsReset = false;
         try {
-            dependencies.getAccountManager().setPreKeys(preKeyUpload);
+            NetworkResultUtil.toPreKeysLegacy(dependencies.getKeysApi().setPreKeys(preKeyUpload));
             try {
                 if (preKeyRecords != null) {
                     account.addPreKeys(serviceIdType, preKeyRecords);
@@ -173,7 +174,7 @@ public class PreKeyHelper {
             // This can happen when the primary device has changed phone number
             logger.warn("Failed to updated pre keys: {}", e.getMessage());
         } catch (NonSuccessfulResponseCodeException e) {
-            if (serviceIdType != ServiceIdType.PNI || e.getCode() != 422) {
+            if (serviceIdType != ServiceIdType.PNI || e.code != 422) {
                 throw e;
             }
             logger.warn("Failed to set PNI pre keys, ignoring for now. Account needs to be reregistered to fix this.");
@@ -221,7 +222,8 @@ public class PreKeyHelper {
     }
 
     private List<KyberPreKeyRecord> generateKyberPreKeys(
-            ServiceIdType serviceIdType, final IdentityKeyPair identityKeyPair
+            ServiceIdType serviceIdType,
+            final IdentityKeyPair identityKeyPair
     ) {
         final var accountData = account.getAccountData(serviceIdType);
         final var offset = accountData.getPreKeyMetadata().getNextKyberPreKeyId();
@@ -246,7 +248,9 @@ public class PreKeyHelper {
     }
 
     private KyberPreKeyRecord generateLastResortKyberPreKey(
-            ServiceIdType serviceIdType, IdentityKeyPair identityKeyPair, final int offset
+            ServiceIdType serviceIdType,
+            IdentityKeyPair identityKeyPair,
+            final int offset
     ) {
         final var accountData = account.getAccountData(serviceIdType);
         final var signedPreKeyId = accountData.getPreKeyMetadata().getNextKyberPreKeyId() + offset;

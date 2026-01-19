@@ -20,7 +20,7 @@ public class ServiceConfig {
 
     public static final int MAX_ATTACHMENT_SIZE = 150 * 1024 * 1024;
     public static final long MAX_ENVELOPE_SIZE = 0;
-    public static final int MAX_MESSAGE_BODY_SIZE = 2000;
+    public static final int MAX_MESSAGE_SIZE_BYTES = 2000;
     public static final long AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE = 10 * 1024 * 1024;
     public static final boolean AUTOMATIC_NETWORK_RETRY = true;
     public static final int GROUP_MAX_SIZE = 1001;
@@ -28,12 +28,14 @@ public class ServiceConfig {
     public static final long UNREGISTERED_LIFESPAN = TimeUnit.DAYS.toMillis(30);
 
     public static AccountAttributes.Capabilities getCapabilities(boolean isPrimaryDevice) {
-        final var deleteSync = !isPrimaryDevice;
-        return new AccountAttributes.Capabilities(true, deleteSync, true);
+        final var attachmentBackfill = !isPrimaryDevice;
+        final var spqr = !isPrimaryDevice;
+        return new AccountAttributes.Capabilities(true, true, attachmentBackfill, spqr);
     }
 
     public static ServiceEnvironmentConfig getServiceEnvironmentConfig(
-            ServiceEnvironment serviceEnvironment, String userAgent
+            ServiceEnvironment serviceEnvironment,
+            String userAgent
     ) {
         final Interceptor userAgentInterceptor = chain -> chain.proceed(chain.request()
                 .newBuilder()

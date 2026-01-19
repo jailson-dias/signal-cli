@@ -20,7 +20,7 @@ import java.util.TreeSet;
  * our local store). We use it for a {@link TreeSet}, so mainly it's just important that the '0'
  * case is correct. Other cases are whatever, just make it something stable.
  */
-abstract class DefaultStorageRecordProcessor<E extends SignalRecord> implements StorageRecordProcessor<E>, Comparator<E> {
+abstract class DefaultStorageRecordProcessor<E extends SignalRecord<?>> implements StorageRecordProcessor<E>, Comparator<E> {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultStorageRecordProcessor.class);
     private final Set<E> matchedRecords = new TreeSet<>(this);
@@ -49,7 +49,7 @@ abstract class DefaultStorageRecordProcessor<E extends SignalRecord> implements 
         final var local = getMatching(remote);
 
         if (local.isEmpty()) {
-            debug(remote.getId(), remote, "No matching local record. Inserting.");
+            debug(remote.getId(), remote, "[Local Insert] No matching local record. Inserting.");
             insertLocal(remote);
             return;
         }
@@ -70,13 +70,13 @@ abstract class DefaultStorageRecordProcessor<E extends SignalRecord> implements 
 
         if (!merged.equals(local.get())) {
             final var update = new StorageRecordUpdate<>(local.get(), merged);
-            debug(remote.getId(), remote, "[Local Update] " + update);
+            debug(remote.getId(), remote, "[Local Update] " + local.get().describeDiff(merged));
             updateLocal(update);
         }
     }
 
     private void debug(StorageId i, E record, String message) {
-        logger.debug("[" + i + "][" + record.getClass().getSimpleName() + "] " + message);
+        logger.debug("[{}][{}] {}", i, record.getClass().getSimpleName(), message);
     }
 
     /**
